@@ -37,10 +37,10 @@ class MultiHeadAttention(nn.Module):
         V = rearrange(V, 'b n (h d) -> b h n d', h=self.num_heads)
 
         # compute attention scores
+        # Attention Scores = Q * K^T / sqrt(d_k)
         #  Q(b, h, n, d) * K(b, h, d, n) ->  (b, h, n, n)
         attn_scores = torch.matmul(Q, rearrange(K, 'b h n d -> b h d n')) / math.sqrt(self.dim_head)
-
-        # apply mask
+        # apply mask if provided
         if mask is not None:
             attn_scores = attn_scores.masked_fill(mask == 0, -1e9)
         attn_probs = torch.softmax(attn_scores, dim=-1)
