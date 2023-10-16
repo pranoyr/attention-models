@@ -10,7 +10,7 @@ from torch import einsum
 # d - dimension of each head (dim_head)
 # b - batch size
 
-# t - number of timesteps of Q,K if Q, K have the same length
+# t - number of timesteps of Q,K,V
 # When Q,K have different lengths
 # i - number of timesteps for Q
 # j - number of timesteps for K
