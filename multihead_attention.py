@@ -2,12 +2,18 @@ import torch
 import torch.nn as nn
 import math
 from einops import rearrange
+from torch import einsum
 
 
-# n - number of timesteps
+
 # h - number of heads (num_heads)
 # d - dimension of each head (dim_head)
 # b - batch size
+
+# t - number of timesteps of Q,K if Q, K have the same length
+# When Q,K have different lengths
+# i - number of timesteps for Q
+# j - number of timesteps for K
 
 class MultiHeadAttention(nn.Module):
     def __init__(self, d_model, num_heads, dim_head):
@@ -31,26 +37,28 @@ class MultiHeadAttention(nn.Module):
         V = self.W_v(V)
 
         # split Q, K, V into multiple heads
-        # (b, n, h * d) -> (b, h, n, d)
-        Q = rearrange(Q, 'b n (h d) -> b h n d', h=self.num_heads)
-        K = rearrange(K, 'b n (h d) -> b h n d', h=self.num_heads)
-        V = rearrange(V, 'b n (h d) -> b h n d', h=self.num_heads)
+        # (b, t, h * d) -> (b, h, t, d)
+        Q = rearrange(Q, 'b t (h d) -> b h t d', h=self.num_heads)
+        K = rearrange(K, 'b t (h d) -> b h t d', h=self.num_heads)
+        V = rearrange(V, 'b t (h d) -> b h t d', h=self.num_heads)
 
         # compute attention scores
         # Attention Scores = Q * K^T / sqrt(d_k)
-        #  Q(b, h, n, d) * K(b, h, d, n) ->  (b, h, n, n)
-        attn_scores = torch.matmul(Q, rearrange(K, 'b h n d -> b h d n')) / math.sqrt(self.dim_head)
+        #  Q(b, h, t, d) * K(b, h, d, t) ->  (b, h, t, t)
+        attn_scores = torch.matmul(Q, rearrange(K, 'b h t d -> b h d t')) / math.sqrt(self.dim_head)
         # apply mask if provided
         if mask is not None:
             attn_scores = attn_scores.masked_fill(mask == 0, -1e9)
         attn_probs = torch.softmax(attn_scores, dim=-1)
 
         # Apply attention scores to V
-        # (b, h, n, n) * V(b, h, n, d) -> (b, h, n, d)
-        output = torch.matmul(attn_probs, V)
+        # (b, h, t, t) * V(b, h, t, d) -> (b, h, t, d)
+        # output = torch.matmul(attn_probs, V)
+        print(attn_probs.shape, V.shape)
+        output = einsum('b h i j, b h j d -> b h i d', attn_probs, V)
 
         # combine heads
-        output = rearrange(output, 'b h n d -> b n (h d)')
+        output = rearrange(output, 'b h t d -> b t (h d)')
         output = self.W_o(output)
         return output
 
