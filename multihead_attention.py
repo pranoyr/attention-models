@@ -53,8 +53,6 @@ class MultiHeadAttention(nn.Module):
 
         # Apply attention scores to V
         # (b, h, t, t) * V(b, h, t, d) -> (b, h, t, d)
-        # output = torch.matmul(attn_probs, V)
-        print(attn_probs.shape, V.shape)
         output = einsum('b h i j, b h j d -> b h i d', attn_probs, V)
 
         # combine heads
