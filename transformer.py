@@ -58,9 +58,9 @@ class MultiHeadAttention(nn.Module):
 
 
 attention = MultiHeadAttention(d_model=512, num_heads=16, dim_head=64)
-Q = torch.randn(2, 10, 512) # (b, n, d_model)
-K = torch.randn(2, 20, 512)
-V = torch.randn(2, 20, 512)
+Q = torch.randn(2, 10, 512) # (b, timesteps_q, d_model)
+K = torch.randn(2, 20, 512) # (b, timesteps_k, d_model)
+V = torch.randn(2, 20, 512) # (b, timesteps_v, d_model)
 
 mask = torch.zeros(2, 16, 10, 20) # (b, h, timesteps_q, timesteps_k)
 
