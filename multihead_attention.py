@@ -28,24 +28,24 @@ class MultiHeadAttention(nn.Module):
         self.W_v = nn.Linear(d_model, num_heads * dim_head)
         self.W_o = nn.Linear(num_heads * dim_head, d_model)
 
-    def forward(self, Q, K, V, mask=None):
+    def forward(self, q, k, v, mask=None):
 
         # prepare Q, K, V for attention
         # Q,K,V - (b_size, n_timesteps, n_heads * dk)
-        Q = self.W_q(Q)
-        K = self.W_k(K)
-        V = self.W_v(V)
+        q = self.W_q(q)
+        k = self.W_k(k)
+        v = self.W_v(v)
 
         # split Q, K, V into multiple heads
         # (b, t, h * d) -> (b, h, t, d)
-        Q = rearrange(Q, 'b t (h d) -> b h t d', h=self.num_heads)
-        K = rearrange(K, 'b t (h d) -> b h t d', h=self.num_heads)
-        V = rearrange(V, 'b t (h d) -> b h t d', h=self.num_heads)
+        q = rearrange(q, 'b t (h d) -> b h t d', h=self.num_heads)
+        k = rearrange(k, 'b t (h d) -> b h t d', h=self.num_heads)
+        v = rearrange(v, 'b t (h d) -> b h t d', h=self.num_heads)
 
         # compute attention scores
         # Attention Scores = Q * K^T / sqrt(d_k)
         #  Q(b, h, t, d) * K(b, h, d, t) ->  (b, h, t, t)
-        attn_scores = torch.matmul(Q, rearrange(K, 'b h t d -> b h d t')) / math.sqrt(self.dim_head)
+        attn_scores = torch.matmul(q, rearrange(k, 'b h t d -> b h d t')) / math.sqrt(self.dim_head)
         # apply mask if provided
         if mask is not None:
             attn_scores = attn_scores.masked_fill(mask == 0, -1e9)
@@ -53,7 +53,7 @@ class MultiHeadAttention(nn.Module):
 
         # Apply attention scores to V
         # (b, h, t, t) * V(b, h, t, d) -> (b, h, t, d)
-        output = einsum('b h i j, b h j d -> b h i d', attn_probs, V)
+        output = einsum('b h i j, b h j d -> b h i d', attn_probs, v)
 
         # combine heads
         output = rearrange(output, 'b h t d -> b t (h d)')
@@ -64,11 +64,11 @@ class MultiHeadAttention(nn.Module):
 if __name__ == '__main__':
 
     attention = MultiHeadAttention(d_model=512, num_heads=16, dim_head=64)
-    Q = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
-    K = torch.randn(2, 20, 512)  # (b, timesteps_k, d_model)
-    V = torch.randn(2, 20, 512)  # (b, timesteps_v, d_model)
+    q = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
+    k = torch.randn(2, 20, 512)  # (b, timesteps_k, d_model)
+    v = torch.randn(2, 20, 512)  # (b, timesteps_v, d_model)
 
-    mask = torch.zeros(2, 16, 10, 20)  # (b, h, timesteps_q, timesteps_k)
+    mask = torch.ones(2, 1, 10, 20)  # (b, h, timesteps_q, timesteps_k)
 
-    output = attention(Q, K, V, mask)
+    output = attention(q, k, v, mask)
     print(output.shape)
