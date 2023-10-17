@@ -48,7 +48,7 @@ class MultiHeadAttention(nn.Module):
         attn_scores = torch.matmul(q, rearrange(k, 'b h t d -> b h d t')) / math.sqrt(self.dim_head)
         # apply mask if provided
         if mask is not None:
-            attn_scores = attn_scores.masked_fill(mask == 0, -1e9)
+            attn_scores = attn_scores.masked_fill(mask, -1e9)
         attn_probs = torch.softmax(attn_scores, dim=-1)
 
         # Apply attention scores to V
@@ -65,10 +65,12 @@ if __name__ == '__main__':
 
     attention = MultiHeadAttention(d_model=512, num_heads=16, dim_head=64)
     q = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
-    k = torch.randn(2, 20, 512)  # (b, timesteps_k, d_model)
-    v = torch.randn(2, 20, 512)  # (b, timesteps_v, d_model)
+    k = torch.randn(2, 10, 512)  # (b, timesteps_k, d_model)
+    v = torch.randn(2, 10, 512)  # (b, timesteps_v, d_model)
 
-    mask = torch.ones(2, 1, 10, 20)  # (b, h, timesteps_q, timesteps_k)
+    # causal mask used in Masked Multi-Head Attention
+    i, j = q.shape[1], k.shape[1]
+    mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
 
     output = attention(q, k, v, mask)
     print(output.shape)
