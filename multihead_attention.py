@@ -5,7 +5,6 @@ from einops import rearrange
 from torch import einsum
 
 
-
 # h - number of heads (num_heads)
 # d - dimension of each head (dim_head)
 # b - batch size
@@ -45,7 +44,8 @@ class MultiHeadAttention(nn.Module):
         # compute attention scores
         # Attention Scores = Q * K^T / sqrt(d_k)
         #  Q(b, h, t, d) * K(b, h, d, t) ->  (b, h, t, t)
-        attn_scores = torch.matmul(q, rearrange(k, 'b h t d -> b h d t')) / math.sqrt(self.dim_head)
+        k_transpose = rearrange(k, 'b h t d -> b h d t')
+        attn_scores = einsum('b h i d, b h d j -> b h i j', q, k_transpose)
         # apply mask if provided
         if mask is not None:
             attn_scores = attn_scores.masked_fill(mask, -1e9)
@@ -63,7 +63,10 @@ class MultiHeadAttention(nn.Module):
 
 if __name__ == '__main__':
 
-    attention = MultiHeadAttention(d_model=512, num_heads=16, dim_head=64)
+    attention = MultiHeadAttention(d_model=512,
+                                   num_heads=16,
+                                   dim_head=64)
+    
     q = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
     k = torch.randn(2, 10, 512)  # (b, timesteps_k, d_model)
     v = torch.randn(2, 10, 512)  # (b, timesteps_v, d_model)
