@@ -1,5 +1,6 @@
-from einops import rearrange, einsum, pack
+from einops import rearrange, einsum, pack, repeat
 from torch import einsum
+
 import torch
 
 
@@ -23,15 +24,14 @@ print("m: ", m.shape)
 print()
 
 
-
-
 # cat 
-l = [x,x]
+l = [x,m]
 z = pack(l, '* i')[0]
 print(f"cat: {z.shape}")
 print()
 
 # stack
+l = [x,x]
 z = pack(l, '* i j')[0]
 print(f"stack: {z.shape}")
 print()
@@ -55,5 +55,15 @@ print()
 # chunk
 z = x.chunk(2, dim=1)
 print(f"chunk: {z}")
+print()
+
+# masked_fill
+z = x.masked_fill(x > 5, 0)
+print(f"masked_fill: {z}")
+print()
+
+# repeat
+z = repeat(x, 'i j -> i (2 j) ')
+print(f"repeat: {z}")
 print()
 
