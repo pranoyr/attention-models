@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch
 import copy
 import torch.nn.functional as F
+from pos_enc import PositionalEncoding
 
 
 def _get_clones(block, N=6) -> nn.ModuleList:
@@ -47,17 +48,17 @@ class FeedForward(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self, d_model, num_heads, dim_head, dropout=0.2):
+    def __init__(self, dim, n_heads, d_head, dropout=0.2):
         super().__init__()
 
         self.multihead_attention = MultiHeadAttention(
-            d_model, num_heads, dim_head)
-        self.feed_forward = FeedForward(d_model)
-        self.norm = nn.LayerNorm(d_model)
+            dim, n_heads, d_head)
+        self.feed_forward = FeedForward(dim)
+        self.norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, mask=None):
-        
+
         # self attention
         attn_out = self.multihead_attention(x, x, x, mask=mask)
 
@@ -70,44 +71,26 @@ class EncoderLayer(nn.Module):
 
         # ADD & NORM
         x = fc_out + x
-        x = self.dropout(self.norm(x))  
-
-        return x
-
-
-class Encoder(nn.Module):
-    def __init__(self,
-                 encoder_layer,
-                 num_layers,
-                 ):
-        super().__init__()
-        self.layers = _get_clones(encoder_layer, num_layers)
-        self.num_layers = num_layers
-
-    def forward(self, x, mask=None, pos=None):
-
-        #x = x + pos
-
-        for layer in self.layers:
-            x = layer(x, mask=mask)
+        x = self.dropout(self.norm(x))
 
         return x
 
 
 class DecoderLayer(nn.Module):
-    def __init__(self, d_model, num_heads, dim_head, dropout=0.2):
+    def __init__(self, dim, n_heads, d_head, dropout=0.2):
         super().__init__()
 
         self.multihead_attention = MultiHeadAttention(
-            d_model, num_heads, dim_head)
-        self.feed_forward = FeedForward(d_model)
-        self.norm = nn.LayerNorm(d_model)
+            dim, n_heads, d_head)
+        self.feed_forward = FeedForward(dim)
+        self.norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, dec_inp, enc_out, mask=None):
 
         # self attention
-        attn_out = self.multihead_attention(dec_inp, dec_inp, dec_inp, mask=mask)
+        attn_out = self.multihead_attention(
+            dec_inp, dec_inp, dec_inp, mask=mask)
 
         # ADD & NORM
         dec_inp = attn_out + dec_inp
@@ -123,7 +106,7 @@ class DecoderLayer(nn.Module):
         # feed forward
         fc_out = self.feed_forward(dec_inp)
 
-         # ADD & NORM
+        # ADD & NORM
         dec_inp = fc_out + dec_inp
         dec_out = self.dropout(self.norm(dec_inp))  # e.g.: 32x10x512
 
@@ -131,18 +114,17 @@ class DecoderLayer(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(
-            self,
-            decoder_layer,
-            num_layers):
+    def __init__(self, dim, n_heads, d_head, depth):
         super().__init__()
 
-        self.layers = _get_clones(decoder_layer, num_layers)
-        self.num_layers = num_layers
+        decoder_layer = DecoderLayer(dim, n_heads, d_head)
+        self.layers = _get_clones(decoder_layer, depth)
+        self.pos = PositionalEncoding(dim)
 
-    def forward(self, dec_out, enc_out, mask=None):
+    def forward(self, dec_in, enc_out, mask=None):
 
       #  tgt = tgt + pos
+        dec_out = self.pos(dec_in)
 
         # input to the decoder is the previous dec output
         for layer in self.layers:
@@ -151,38 +133,54 @@ class Decoder(nn.Module):
         return dec_out
 
 
+class Encoder(nn.Module):
+    def __init__(self, dim, n_heads, d_head, depth):
+        super().__init__()
+
+        encoder_layer = EncoderLayer(dim, n_heads, d_head)
+
+        self.layers = _get_clones(encoder_layer, depth)
+        self.pos_enc = PositionalEncoding(dim)
+
+    def forward(self, x, mask=None):
+
+        # add positional encoding
+        x = self.pos_enc(x)
+
+        for layer in self.layers:
+            x = layer(x, mask=mask)
+
+        return x
+
+
 class Transformer(nn.Module):
     def __init__(self,
                  d_model,
-                 num_heads,
-                 dim_head,
-                 enc_depth,
-                 dec_depth,
-                 num_classes):
+                 n_heads=8,
+                 d_head=64,
+                 enc_depth=6,
+                 dec_depth=6,
+                 n_classes=None):
         super().__init__()
 
-        # a single encoder and decoder layer
-        encoder = EncoderLayer(d_model, num_heads, dim_head)
-        decoder = DecoderLayer(d_model, num_heads, dim_head)
-
         # stack of encoders
-        self.encoder = Encoder(encoder, enc_depth)
+        self.encoder = Encoder(dim=d_model, n_heads=n_heads,
+                               d_head=d_head, depth=enc_depth)
 
         # stack of decoders
-        self.decoder = Decoder(decoder, dec_depth)
+        self.decoder = Decoder(dim=d_model, n_heads=n_heads,
+                               d_head=d_head, depth=dec_depth)
 
         # final linear layer
-        self.linear = nn.Linear(d_model, num_classes)
+        self.linear = nn.Linear(d_model, n_classes)
 
     def forward(self, x, tgt):
 
         # causal mask for decoder
-        i, j = tgt.shape[1], tgt.shape[1]  # timestep of Q, V
+        i, j = tgt.shape[1], tgt.shape[1]  # i, j - timestep of Q, V
         tgt_mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
 
-        # encoder 
         enc_out = self.encoder(x)
-        # decoder
         x = self.decoder(tgt, enc_out, mask=tgt_mask)
         x = self.linear(x)
         return x
@@ -190,7 +188,12 @@ class Transformer(nn.Module):
 
 if __name__ == '__main__':
     transformer = Transformer(
-        d_model=512, num_heads=16, dim_head=64, enc_depth=6, dec_depth=6, num_classes=10)
+        d_model=512,
+        n_heads=16,
+        d_head=64,
+        enc_depth=6,
+        dec_depth=6,
+        n_classes=10)
 
     src_seq = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
     target_seq = torch.randn(2, 20, 512)  # (b, timesteps_q, d_model)

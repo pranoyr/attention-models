@@ -15,17 +15,17 @@ from torch import einsum
 # j - number of timesteps for K
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, d_model, num_heads, dim_head):
+    def __init__(self, dim, num_heads, dim_head):
         super(MultiHeadAttention, self).__init__()
 
-        self.d_model = d_model
+        self.dim = dim
         self.num_heads = num_heads
         self.dim_head = dim_head
 
-        self.W_q = nn.Linear(d_model, num_heads * dim_head)
-        self.W_k = nn.Linear(d_model, num_heads * dim_head)
-        self.W_v = nn.Linear(d_model, num_heads * dim_head)
-        self.W_o = nn.Linear(num_heads * dim_head, d_model)
+        self.W_q = nn.Linear(dim, num_heads * dim_head)
+        self.W_k = nn.Linear(dim, num_heads * dim_head)
+        self.W_v = nn.Linear(dim, num_heads * dim_head)
+        self.W_o = nn.Linear(num_heads * dim_head, dim)
 
         self.scale = dim_head ** -0.5
 
@@ -65,13 +65,13 @@ class MultiHeadAttention(nn.Module):
 
 if __name__ == '__main__':
 
-    attention = MultiHeadAttention(d_model=512,
+    attention = MultiHeadAttention(dim=512,
                                    num_heads=16,
                                    dim_head=64)
     
-    q = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
-    k = torch.randn(2, 10, 512)  # (b, timesteps_k, d_model)
-    v = torch.randn(2, 10, 512)  # (b, timesteps_v, d_model)
+    q = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
+    k = torch.randn(2, 10, 512)  # (b, timesteps_k, dim)
+    v = torch.randn(2, 10, 512)  # (b, timesteps_v, dim)
 
     # causal mask used in Masked Multi-Head Attention
     i, j = q.shape[1], k.shape[1]
