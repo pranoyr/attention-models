@@ -27,6 +27,8 @@ class MultiHeadAttention(nn.Module):
         self.W_v = nn.Linear(d_model, num_heads * dim_head)
         self.W_o = nn.Linear(num_heads * dim_head, d_model)
 
+        self.scale = dim_head ** -0.5
+
     def forward(self, q, k, v, mask=None):
 
         # prepare Q, K, V for attention
@@ -45,7 +47,7 @@ class MultiHeadAttention(nn.Module):
         # Attention Scores = Q * K^T / sqrt(d_k)
         #  Q(b, h, t, d) * K(b, h, d, t) ->  (b, h, t, t)
         k_transpose = rearrange(k, 'b h t d -> b h d t')
-        attn_scores = einsum('b h i d, b h d j -> b h i j', q, k_transpose)
+        attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, k_transpose)
         # apply mask if provided
         if mask is not None:
             attn_scores = attn_scores.masked_fill(mask, -1e9)
