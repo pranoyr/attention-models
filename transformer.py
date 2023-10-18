@@ -6,6 +6,8 @@ import torch.nn.functional as F
 from pos_enc import PositionalEncoding
 
 
+# Attention is all you need
+
 def _get_clones(block, N=6) -> nn.ModuleList:
     block_stack = nn.ModuleList([copy.deepcopy(block) for _ in range(N)])
     return block_stack
