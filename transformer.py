@@ -165,22 +165,23 @@ class Transformer(nn.Module):
                  n_classes=None):
         super().__init__()
 
-        # stack of encoders
         self.encoder = Encoder(dim=d_model, n_heads=n_heads,
                                d_head=d_head, depth=enc_depth)
 
-        # stack of decoders
         self.decoder = Decoder(dim=d_model, n_heads=n_heads,
                                d_head=d_head, depth=dec_depth)
 
-        # final linear layer
         self.linear = nn.Linear(d_model, n_classes)
-
-    def forward(self, x, tgt):
-
+    
+    def get_decoder_mask(self, tgt):
         # causal mask for decoder
         i, j = tgt.shape[1], tgt.shape[1]  # i, j - timestep of Q, V
         tgt_mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
+        return tgt_mask
+
+    def forward(self, x, tgt):
+
+        tgt_mask = self.get_decoder_mask(tgt)
 
         enc_out = self.encoder(x)
         x = self.decoder(tgt, enc_out, mask=tgt_mask)
