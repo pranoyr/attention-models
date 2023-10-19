@@ -3,6 +3,7 @@ from torch.autograd import Variable
 import torch
 import torch.nn as nn
 import math
+import torch.nn.functional as F
 
 # class PositionalEncoding(nn.Module):
 # 	def __init__(self, d_model, max_len = 80):
@@ -25,20 +26,16 @@ import math
 # 		x = x + self.pe[:seq_len]
 # 		return x
 class AbsolutePositionalEmbedding(nn.Module):
-    def __init__(self, dim, max_seq_len):
-        super().__init__()
-      
-        self.max_seq_len = max_seq_len
-        self.emb = nn.Embedding(max_seq_len, dim)
+	def __init__(self, dim, max_len):
+		super().__init__()
+	  
+		self.emb = nn.Embedding(max_len, dim)
 
-    def forward(self, x):
-        seq_len, device = x.shape[1], x.device
-
-
-        pos_emb = self.emb(pos)
-        pos_emb = pos_emb * self.scale
-        return l2norm(pos_emb) if self.l2norm_embed else pos_emb
-    
+	def forward(self, x):
+		pos_emb = self.emb(x)
+		pos_emb = F.normalize(pos_emb, p = 2, dim = -1)
+		return pos_emb
+	
 
 
 class PositionalEncoding(nn.Module):
@@ -65,7 +62,7 @@ class PositionalEncoding(nn.Module):
 	  
 
 if __name__ == '__main__':
-	pe = PositionalEncoding(512, max_len=5000)
+	pe = AbsolutePositionalEmbedding(512, max_len=5000)
 	x = torch.zeros(1, 100, 512) # (batch_size, seq_len, d_model)
 	z = pe(x)
 	print(z.shape)
