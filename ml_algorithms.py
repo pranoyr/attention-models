@@ -20,7 +20,7 @@ b = torch.randn(1, requires_grad=True)
 
 W_t = rearrange(W, 'i -> i 1')
 
-# Y  = XW^T + b   or  Y = x1w1 + x2w2 + x3w3 + x4w4 + x5w5 + b
+# Y  = XW^T + b   or  Y = x1w1 + x2w2 + x3w3 + x4w4 ... xnyn + b
 # (b, n_feat) * (n_feat, 1) -> (b, 1)
 y_pred = einsum('b i, i j -> b j', x, W_t) + b
 
