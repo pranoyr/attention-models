@@ -6,11 +6,11 @@ from einops import rearrange, repeat, reduce
 
 # linear regression
 
-num_samples = 100
+num_samples = 10
 num_features = 5
 
 # dataset consists of 100 samples with 5 features. Ouput consists of a value between 0 and 1
-x , y = torch.randn(100, num_features), torch.randn(100, 1)
+x , y = torch.randn(num_samples, num_features), torch.randn(num_samples, 1)
 
 
 # make W and b trainable parameters
