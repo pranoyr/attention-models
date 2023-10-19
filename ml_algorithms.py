@@ -9,7 +9,7 @@ from einops import rearrange, repeat, reduce
 num_samples = 10
 num_features = 5
 
-# dataset consists of 100 samples with 5 features. Ouput consists of a value between 0 and 1
+# Dataset
 x , y = torch.randn(num_samples, num_features), torch.randn(num_samples, 1)
 
 
