@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch
 import copy
 import torch.nn.functional as F
-from pos_enc import PositionalEncoding
+from positional_encoding import PositionalEncoding
 
 
 # Attention is all you need

@@ -1,4 +1,4 @@
-from einops import rearrange, einsum, pack, repeat
+from einops import rearrange, einsum, pack, repeat, unpack
 from torch import einsum
 
 import torch
@@ -29,6 +29,14 @@ l = [x,m]
 z = pack(l, '* i')[0]
 print(f"cat: {z.shape}")
 print()
+
+
+# # unpack
+# z = unpack(z, '* j')[0]
+# print(f"stack: {z.shape}")
+# print()
+
+
 
 # stack
 l = [x,x]
