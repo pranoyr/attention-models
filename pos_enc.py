@@ -24,6 +24,21 @@ import math
 # 		seq_len = x.size(1)
 # 		x = x + self.pe[:seq_len]
 # 		return x
+class AbsolutePositionalEmbedding(nn.Module):
+    def __init__(self, dim, max_seq_len):
+        super().__init__()
+      
+        self.max_seq_len = max_seq_len
+        self.emb = nn.Embedding(max_seq_len, dim)
+
+    def forward(self, x):
+        seq_len, device = x.shape[1], x.device
+
+
+        pos_emb = self.emb(pos)
+        pos_emb = pos_emb * self.scale
+        return l2norm(pos_emb) if self.l2norm_embed else pos_emb
+    
 
 
 class PositionalEncoding(nn.Module):

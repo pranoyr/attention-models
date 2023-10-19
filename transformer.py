@@ -59,10 +59,10 @@ class EncoderLayer(nn.Module):
         self.norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x, mask=None):
+    def forward(self, x):
 
         # self attention
-        attn_out = self.multihead_attention(x, x, x, mask=mask)
+        attn_out = self.multihead_attention(q=x, k=x, v=x)
 
        # ADD & NORM
         x = attn_out + x
@@ -91,15 +91,14 @@ class DecoderLayer(nn.Module):
     def forward(self, dec_inp, enc_out, mask=None):
 
         # self attention
-        attn_out = self.multihead_attention(
-            dec_inp, dec_inp, dec_inp, mask=mask)
+        attn_out = self.multihead_attention(q=dec_inp, k=dec_inp, v=dec_inp, mask=mask)
 
         # ADD & NORM
         dec_inp = attn_out + dec_inp
         dec_inp = self.dropout(self.norm(dec_inp))
 
         # cross attention
-        attn_out = self.multihead_attention(dec_inp, enc_out, enc_out)
+        attn_out = self.multihead_attention(q=dec_inp, k=enc_out, v=enc_out)
 
         # ADD & NORM
         dec_inp = attn_out + dec_inp
@@ -144,13 +143,13 @@ class Encoder(nn.Module):
         self.layers = _get_clones(encoder_layer, depth)
         self.pos_enc = PositionalEncoding(dim)
 
-    def forward(self, x, mask=None):
+    def forward(self, x):
 
         # add positional encoding
         x = self.pos_enc(x)
 
         for layer in self.layers:
-            x = layer(x, mask=mask)
+            x = layer(x)
 
         return x
 
