@@ -7,6 +7,7 @@ from positional_encoding import AbsolutePositionalEmbedding
 from transformer import EncoderLayer, _get_clones
 
 
+
 class Encoder(nn.Module):
     def __init__(self, dim, n_heads, d_head, depth):
         super().__init__()
@@ -32,9 +33,9 @@ class Vit(nn.Module):
         self.patch_size = patch_size
 
         # number of features inside a patch
-        features = patch_size * patch_size * 3
+        self.patch_dim = patch_size * patch_size * 3
 
-        self.fc1 = nn.Linear(features, dim)
+        self.fc1 = nn.Linear(self.patch_dim, dim)
         self.final_fc = nn.Linear(dim, num_classes)
 
         self.class_token = nn.Parameter(torch.randn(1, dim))
@@ -47,7 +48,9 @@ class Vit(nn.Module):
     def forward(self, x):
         # (batch_size, channels, height, width) --> (batch_size, timesteps, features)
         x = rearrange(x, 'b c (h p1) (w p2)  -> b (h w) (p1 p2 c)', p1=self.patch_size, p2=self.patch_size)
-        x = self.fc1(x)
+        x = nn.LayerNorm(self.patch_dim)(x)
+        x = self.fc1(x) # to dim
+        x = nn.LayerNorm(self.dim)(x)
 
         # add class token
         class_token = repeat(self.class_token, 't d -> b t d', b=x.shape[0])
