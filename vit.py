@@ -71,11 +71,5 @@ img_batch = torch.randn(2, 3, 256, 256)
 out = model(img_batch)
 print(out.shape)
 
-# patch = out[0][0]    
-# print(torch.sum(patch))
-# patch = patch.detach().numpy()
-# cv2.imwrite('patch.jpg', patch)
 
-    
-    
     
