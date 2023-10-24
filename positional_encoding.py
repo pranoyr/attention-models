@@ -67,3 +67,9 @@ if __name__ == '__main__':
 	z = pe(x)
 	print(z.shape)
 
+	pe = AbsolutePositionalEmbedding(512, max_len=5000)
+	x = torch.arange(100).unsqueeze(0)
+	z = pe(x)
+	print(z.shape)
+
+
