@@ -75,3 +75,8 @@ z = repeat(x, 'i j -> i (2 j) ')
 print(f"repeat: {z}")
 print()
 
+# scatter
+
+# scatter_matrix = torch.tensor([0,1,2])
+# z = torch.scatter(x, 1, scatter_matrix, 100)
+# print(f"scatter: {z}")
