@@ -207,12 +207,16 @@ class VQGAN(nn.Module):
     def __init__(self):
         super(VQGAN, self).__init__()
         self.encoder = Encoder()
+        self.pre_quant = nn.Conv2d(256, 256, 1)
         self.codebook = Codebook()
+        self.post_quant = nn.Conv2d(256, 256, 1)
         self.decoder = Decoder()
 
     def forward(self, imgs):
         enc_imgs = self.encoder(imgs)
+        enc_imgs = self.pre_quant(enc_imgs)
         embeds, indices, loss = self.codebook(enc_imgs)
+        embeds = self.post_quant(embeds)
         out = self.decoder(embeds)
         return out, loss
     
