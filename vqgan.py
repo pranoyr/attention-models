@@ -98,12 +98,6 @@ class NonLocalBlock(nn.Module):
         return x + A
 
 
-
-
-import torch.nn as nn
-# from helper import ResidualBlock, NonLocalBlock, DownSampleBlock, UpSampleBlock, GroupNorm, Swish
-
-
 class Encoder(nn.Module):
     def __init__(self):
         super(Encoder, self).__init__()
@@ -174,24 +168,6 @@ class Codebook(nn.Module):
         
 
 
-# class model(nn.Module):
-#     def __init__(self, dim, patch_size = 64, n_heads = 8, d_head = 64, depth = 6, num_classes = None):
-#         super(VQGAN, self).__init__()
-        
-#         self.dim = dim
-#         self.encoder = Encoder(dim, n_heads, d_head, depth)
-#         self.decoder = Decoder(dim, n_heads, d_head, depth)
-#         self.quantize = Quantize()
-    
-#     def forward(self, x):
-#         x = self.ecoder(x)
-#         indices, embeds = self.quantize(x)
-#         x = self.decoder(indices)
-#         # number of fea
-
-import torch.nn as nn
-
-
 class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
@@ -227,22 +203,35 @@ class Decoder(nn.Module):
 
 
 
+class VQGAN(nn.Module):
+    def __init__(self):
+        super(VQGAN, self).__init__()
+        self.encoder = Encoder()
+        self.codebook = Codebook()
+        self.decoder = Decoder()
+
+    def forward(self, imgs):
+        enc_imgs = self.encoder(imgs)
+        embeds, indices, loss = self.codebook(enc_imgs)
+        out = self.decoder(embeds)
+        return out, loss
+    
+    def decode_img(self, indices):
+        embeds = self.codebook.indices_to_embeddings(indices)
+        imgs = self.decoder(embeds)
+        return imgs
+
+
+vqgan = VQGAN()
+
 x = torch.randn(1, 3, 256, 256)
-encoder = Encoder()
-codebook = Codebook()
-decoder = Decoder()
-
-enc_out = encoder(x)
-embeds, indices, loss = codebook(enc_out)
-print(embeds.shape)
-
-out = decoder(embeds)
-print(out.shape)
+out, loss = vqgan(x)
+print(out.shape, loss)
 
 
 
-
-embeds = codebook.indices_to_embeddings(indices)
-out = decoder(embeds)
-print(out.shape)
+# indices pof shape 256 
+indices = torch.randint(0, 1024, (256,))
+img = vqgan.decode_img(indices)
+print(img.shape)
 
