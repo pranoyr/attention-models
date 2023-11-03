@@ -141,6 +141,7 @@ class Codebook(nn.Module):
         self.embedding.weight.data.uniform_(-1.0 / self.num_codebook_vectors, 1.0 / self.num_codebook_vectors)
 
     def forward(self, z):
+
         z = z.permute(0, 2, 3, 1).contiguous()
         z_flattened = z.view(-1, self.latent_dim)
 
@@ -149,7 +150,10 @@ class Codebook(nn.Module):
             2*(torch.matmul(z_flattened, self.embedding.weight.t()))
 
         min_encoding_indices = torch.argmin(d, dim=1)
-        z_q = self.embedding(min_encoding_indices).view(z.shape)
+        z_q = self.embedding(min_encoding_indices) # z_q shape is (n_indices, codebook_dim)
+
+        b , h, w, d = z.shape
+        z_q = rearrange(z_q, '(b h w) d -> b h w d', h=h, w=w)
 
         loss = torch.mean((z_q.detach() - z)**2) + self.beta * torch.mean((z_q - z.detach())**2)
 
@@ -228,7 +232,7 @@ class VQGAN(nn.Module):
 
 vqgan = VQGAN()
 
-x = torch.randn(1, 3, 256, 256)
+x = torch.randn(2, 3, 256, 256)
 out, loss = vqgan(x)
 print(out.shape, loss)
 
