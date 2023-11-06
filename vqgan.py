@@ -142,9 +142,11 @@ class Codebook(nn.Module):
 
     def forward(self, z):
 
-        z = z.permute(0, 2, 3, 1).contiguous()
-        z_flattened = z.view(-1, self.latent_dim)
+        # for computing the difference between z and embeddings
+        z = rearrange(z, 'b d h w -> b h w d')
+        z_flattened = rearrange(z, 'b h w d -> (b h w) d') 
 
+        # D - distance between z and embeddings :  z(b*h*w,d) - embeddings(n,D) 
         d = torch.sum(z_flattened**2, dim=1, keepdim=True) + \
             torch.sum(self.embedding.weight**2, dim=1) - \
             2*(torch.matmul(z_flattened, self.embedding.weight.t()))
@@ -159,7 +161,8 @@ class Codebook(nn.Module):
 
         z_q = z + (z_q - z).detach()
 
-        z_q = z_q.permute(0, 3, 1, 2)
+        # for decoder 
+        z_q = rearrange(z_q, 'b h w d -> b d h w')
 
         return z_q, min_encoding_indices, loss
 
