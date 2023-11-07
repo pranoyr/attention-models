@@ -2,9 +2,9 @@ import torch
 from torch import einsum
 from einops import rearrange, repeat, reduce
 
-
-
-# linear regression
+##########################################################################
+######################## Linear regression  ##############################
+##########################################################################
 
 num_samples = 10
 num_features = 5
@@ -26,13 +26,12 @@ y_pred = einsum('b i, i j -> b j', x, W_t) + b
 
 # loss function
 loss = ((y_pred - y)**2).mean()
-
-
 print("loss: ", loss)
 
 
-
-# logistic regresison
+##########################################################################
+######################## Logistic regression  ############################
+##########################################################################
 
 
 num_samples = 10
@@ -60,23 +59,3 @@ y_pred = torch.sigmoid(z)
 # binary cross entropy loss
 loss = -(y * torch.log(y_pred) + (1 - y) * torch.log(1 - y_pred)).mean()
 print(loss)
-
-
-
-
-
-# Neural Network
-
-
-
-
-
-
-
-
-
-
-
-
-
-
