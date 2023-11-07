@@ -99,7 +99,7 @@ class NonLocalBlock(nn.Module):
 
 
 class Encoder(nn.Module):
-    def __init__(self):
+    def __init__(self, dim):
         super(Encoder, self).__init__()
         channels = [128, 128, 128, 256, 256, 512]
         attn_resolutions = [16]
@@ -122,7 +122,7 @@ class Encoder(nn.Module):
         layers.append(ResidualBlock(channels[-1], channels[-1]))
         layers.append(GroupNorm(channels[-1]))
         layers.append(Swish())
-        layers.append(nn.Conv2d(channels[-1], 256, 3, 1, 1))
+        layers.append(nn.Conv2d(channels[-1], dim, 3, 1, 1))
         self.model = nn.Sequential(*layers)
 
     def forward(self, x):
@@ -131,14 +131,14 @@ class Encoder(nn.Module):
 
 
 class Codebook(nn.Module):
-    def __init__(self):
+    def __init__(self, codebook_size=1024, codebook_dim=256, beta=0.25):
         super(Codebook, self).__init__()
-        self.num_codebook_vectors = 1024
-        self.latent_dim = 256
-        self.beta = 0.01
+        self.codebook_size = codebook_size
+        self.codebook_dim = codebook_dim
+        self.beta = beta
 
-        self.embedding = nn.Embedding(self.num_codebook_vectors, self.latent_dim)
-        self.embedding.weight.data.uniform_(-1.0 / self.num_codebook_vectors, 1.0 / self.num_codebook_vectors)
+        self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
+        self.embedding.weight.data.uniform_(-1.0 / self.codebook_size, 1.0 / self.codebook_size)
 
     def forward(self, z):
 
@@ -176,7 +176,7 @@ class Codebook(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self):
+    def __init__(self, dim):
         super(Decoder, self).__init__()
         channels = [512, 256, 256, 128, 128]
         attn_resolutions = [16]
@@ -184,7 +184,7 @@ class Decoder(nn.Module):
         resolution = 16
 
         in_channels = channels[0]
-        layers = [nn.Conv2d(256, in_channels, 3, 1, 1),
+        layers = [nn.Conv2d(dim, in_channels, 3, 1, 1),
                   ResidualBlock(in_channels, in_channels),
                   NonLocalBlock(in_channels),
                   ResidualBlock(in_channels, in_channels)]
@@ -211,13 +211,13 @@ class Decoder(nn.Module):
 
 
 class VQGAN(nn.Module):
-    def __init__(self):
+    def __init__(self, dim, codebook_size):
         super(VQGAN, self).__init__()
-        self.encoder = Encoder()
-        self.pre_quant = nn.Conv2d(256, 256, 1)
-        self.codebook = Codebook()
-        self.post_quant = nn.Conv2d(256, 256, 1)
-        self.decoder = Decoder()
+        self.encoder = Encoder(dim)
+        self.pre_quant = nn.Conv2d(dim, dim, 1)
+        self.codebook = Codebook(codebook_size, dim)
+        self.post_quant = nn.Conv2d(dim, dim, 1)
+        self.decoder = Decoder(dim)
 
     def forward(self, imgs):
         enc_imgs = self.encoder(imgs)
@@ -233,16 +233,21 @@ class VQGAN(nn.Module):
         return imgs
 
 
-vqgan = VQGAN()
+if __name__ == '__main__':
 
-x = torch.randn(2, 3, 256, 256)
-out, loss = vqgan(x)
-print(out.shape, loss)
+    codebook_dim = 256
+    codebook_size = 8192
+
+    vqgan = VQGAN(codebook_dim, codebook_size)
+
+    img = torch.randn(2, 3, 256, 256)
+    out, loss = vqgan(img)
+    print(out.shape, loss)
 
 
 
-# indices pof shape 256 
-indices = torch.randint(0, 1024, (256,))
-img = vqgan.decode_img(indices)
-print(img.shape)
+    # indices pof shape 256 
+    indices = torch.randint(0, 1024, (256,))
+    img = vqgan.decode_img(indices)
+    print(img.shape)
 
