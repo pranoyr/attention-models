@@ -17,39 +17,42 @@ from typing import Callable, Optional, List
 
 from einops import rearrange, repeat
 from vqgan import VQGAN
+from transformer import DecoderLayer
 
 
 
 class TransformerDecoder(nn.Module):
-    def __init__(self, dim, n_heads, d_head, depth):
-        super().__init__()
+	def __init__(self, dim, n_heads, d_head, depth):
+		super().__init__()
 
-        encoder_layer = EncoderLayer(dim, n_heads, d_head)
+		decoder_layer = DecoderLayer(dim, n_heads, d_head)
 
-        self.layers = _get_clones(encoder_layer, depth)
+		self.layers = _get_clones(decoder_layer, depth)
 
-    def forward(self, x):
+	def forward(self, x):
 
-        for layer in self.layers:
-            x = layer(x)
+		for layer in self.layers:
+			x = layer(x)
 
-        return x
-
+		return x
 
 
 class Parti(nn.Module):
 	def __init__(
 		self,
 		dim,
-		**kwargs,
-		decoder_kwargs
+		t5_name,
+		codebook_size,
+		n_heads,
+		d_head,
+		depth,
 		):
 		super().__init__()
 		self.dim = dim
 		
 		#### Text Encoder  ####
 	
-		text_encoder = TextEncoder(encoder_kwargs)
+		text_encoder = TextEncoder(t5_name)
 		text_embed_dim = get_encoded_dim(t5_name)
 		stext_embed_proj = nn.Linear(text_embed_dim, dim, bias = False) 
 		
@@ -58,47 +61,33 @@ class Parti(nn.Module):
   
 		#### Image Decoder  ####
 	
-		# learnable start token for decoding
 		self.start_token = nn.Parameter(torch.randn(dim))
+		self.pos_enc =  nn.Parameter(torch.randn(1, dim))
 		self.vqgan = VQGAN(dim, codebook_size)
+		self.transformer_decoder = TransformerDecoder(dim, n_heads, d_head, depth)
+		self.to_logits = nn.Linear(dim, codebook_size)
 		
-  
-
-
-	
-
 
 
 	def forward(
 		self,
-		text : List[str],
-		img: Tensor
-	):
+		texts : List[str],
+		imgs: Tensor
+		):
 		device, b, n = x.device, *x.shape
 
 		# encode text
 		text_embeds, context_mask = self.text_encoder(texts, output_device=device)
 		context = self.text_embed_proj(text_embeds)
 		
-		
+
 		# encode image
-		
-
-
-
-		
-
-		# image token embedding
-		# if x.shape[1] > 0:
-		x = self.token_emb(x)
-		# add position embedding
-		# pos_emb = self.pos_emb(x)
-		# x = x + axial_pos_emb[:n]
+		indices = self.vqgan.encode_imgs(imgs)
+		x = self.token_emb(indices)
 
 		x = self.pos_emb(x) + x
 
 
-		
 		# add start token
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
 		x = torch.cat((start_token, x), dim=1)
@@ -106,28 +95,15 @@ class Parti(nn.Module):
 		x = self.init_norm(x)
 		context = self.enc_norm(context)
 
-
-		# else:
-		# 	x = repeat(self.start_token, 'd -> b 1 d', b=b)
-
-		# context, context_mask = map(lambda t: t[:, :self.max_text_len], (context, context_mask))
-
-		if cond_drop_prob > 0:
-			keep_mask = prob_mask_like((b,), 1 - cond_drop_prob, device = device)
-			context_mask = rearrange(keep_mask, 'b -> b 1') & context_mask
-
 		# decoder
-		x = self.transformer_blocks(x, context = context, context_mask = context_mask)
+		x = self.transformer_decoder(x, context)
 
 		# to logits
 		logits = self.to_logits(x)
 
-		if exists(labels):
-			# calculate loss
-			loss = F.cross_entropy(rearrange(logits, 'b n c -> b c n'), labels)
-			return loss, logits
-		else:
-			return logits
+		# calculate loss
+		loss = F.cross_entropy(rearrange(logits, 'b n c -> b c n'), labels)
+		return loss
 
 
 	def generate(self, src):
@@ -171,12 +147,12 @@ if __name__=="__main__":
 	)
  
 	decoder_params = dict(
-		code_book_size = 8192,
+		codebook_size = 8192,
 		n_heads = 8,
 		d_head	= 64,
 		depth= 6)
  
  
 	model = Parti(dim, **encoder_params, **decoder_params)
-	out = model(imgs, texts)
-	print(out.shape)
+	loss = model(imgs, texts)
+	loss.backward()
