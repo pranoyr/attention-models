@@ -152,6 +152,7 @@ class Codebook(nn.Module):
             2*(torch.matmul(z_flattened, self.embedding.weight.t()))
 
         min_encoding_indices = torch.argmin(d, dim=1)
+        
         z_q = self.embedding(min_encoding_indices) # z_q shape is (n_indices, codebook_dim)
 
         b , h, w, d = z.shape
@@ -167,9 +168,9 @@ class Codebook(nn.Module):
         return z_q, min_encoding_indices, loss
 
     def indices_to_embeddings(self, indices):
-        h = len(indices) ** 0.5
         embeds = self.embedding(indices)
-        embeds = rearrange(embeds, '(h w) d -> 1 d h w', h=int(h))
+        h = w = embeds.shape[0] ** 0.5 
+        embeds = rearrange(embeds, '(b h w) d -> b d h w', h=int(h), w=int(w))
         return embeds
 
         
@@ -227,10 +228,16 @@ class VQGAN(nn.Module):
         out = self.decoder(embeds)
         return out, loss
     
-    def decode_img(self, indices):
+    def decode_indices(self, indices):
         embeds = self.codebook.indices_to_embeddings(indices)
         imgs = self.decoder(embeds)
         return imgs
+    
+    def encode_imgs(self, imgs):
+        enc_imgs = self.encoder(imgs)
+        enc_imgs = self.pre_quant(enc_imgs)
+        _, indices, _ = self.codebook(enc_imgs)
+        return indices
 
 
 if __name__ == '__main__':
@@ -242,12 +249,10 @@ if __name__ == '__main__':
 
     img = torch.randn(2, 3, 256, 256)
     out, loss = vqgan(img)
-    print(out.shape, loss)
+    print(loss)
 
-
-
-    # indices pof shape 256 
-    indices = torch.randint(0, 1024, (256,))
-    img = vqgan.decode_img(indices)
+    img = torch.randn(1, 3, 256, 256)
+    indices = vqgan.encode_imgs(img)
+    img = vqgan.decode_indices(indices)
     print(img.shape)
 
