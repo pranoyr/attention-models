@@ -4,24 +4,7 @@ from einops import rearrange, reduce, repeat, pack
 from torch import einsum
 import cv2
 from positional_encoding import AbsolutePositionalEmbedding
-from transformer import EncoderLayer, _get_clones
-
-
-
-class Encoder(nn.Module):
-    def __init__(self, dim, n_heads, d_head, depth):
-        super().__init__()
-
-        encoder_layer = EncoderLayer(dim, n_heads, d_head)
-
-        self.layers = _get_clones(encoder_layer, depth)
-
-    def forward(self, x):
-
-        for layer in self.layers:
-            x = layer(x)
-
-        return x
+from transformer import Encoder
 
 
 

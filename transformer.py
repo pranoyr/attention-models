@@ -120,16 +120,13 @@ class Decoder(nn.Module):
 
         decoder_layer = DecoderLayer(dim, n_heads, d_head)
         self.layers = _get_clones(decoder_layer, depth)
-        self.pos = PositionalEncoding(dim)
-
+    
     def forward(self, dec_in, enc_out, mask=None):
-
-      #  tgt = tgt + pos
-        dec_out = self.pos(dec_in)
 
         # input to the decoder is the previous dec output
         for layer in self.layers:
-            dec_out = layer(dec_out, enc_out, mask=mask)
+            dec_out = layer(dec_in, enc_out, mask=mask)
+            dec_in = dec_out
 
         return dec_out
 
@@ -141,12 +138,8 @@ class Encoder(nn.Module):
         encoder_layer = EncoderLayer(dim, n_heads, d_head)
 
         self.layers = _get_clones(encoder_layer, depth)
-        self.pos_enc = PositionalEncoding(dim)
-
+    
     def forward(self, x):
-
-        # add positional encoding
-        x = self.pos_enc(x)
 
         for layer in self.layers:
             x = layer(x)
@@ -166,9 +159,11 @@ class Transformer(nn.Module):
 
         self.encoder = Encoder(dim=d_model, n_heads=n_heads,
                                d_head=d_head, depth=enc_depth)
-
+        
         self.decoder = Decoder(dim=d_model, n_heads=n_heads,
-                               d_head=d_head, depth=dec_depth)
+                               d_head=d_head, depth=dec_depth)\
+        
+        self.pos_enc = PositionalEncoding(d_model)
 
         self.linear = nn.Linear(d_model, n_classes)
     
@@ -181,9 +176,14 @@ class Transformer(nn.Module):
     def forward(self, x, tgt):
 
         tgt_mask = self.get_decoder_mask(tgt)
-
+        
+        # Encoder
+        x = self.pos_enc(x)    
         enc_out = self.encoder(x)
+        # Decoder
+        tgt = self.pos_enc(tgt)
         x = self.decoder(tgt, enc_out, mask=tgt_mask)
+        
         x = self.linear(x)
         return x
 

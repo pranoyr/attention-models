@@ -17,24 +17,9 @@ from typing import Callable, Optional, List
 
 from einops import rearrange, repeat
 from vqgan import VQGAN
-from transformer import DecoderLayer
+from transformer import Decoder
 
 
-
-class TransformerDecoder(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth):
-		super().__init__()
-
-		decoder_layer = DecoderLayer(dim, n_heads, d_head)
-
-		self.layers = _get_clones(decoder_layer, depth)
-
-	def forward(self, x):
-
-		for layer in self.layers:
-			x = layer(x)
-
-		return x
 
 
 class Parti(nn.Module):
@@ -64,7 +49,7 @@ class Parti(nn.Module):
 		self.start_token = nn.Parameter(torch.randn(dim))
 		self.pos_enc =  nn.Parameter(torch.randn(1, dim))
 		self.vqgan = VQGAN(dim, codebook_size)
-		self.transformer_decoder = TransformerDecoder(dim, n_heads, d_head, depth)
+		self.transformer_decoder = Decoder(dim, n_heads, d_head, depth)
 		self.to_logits = nn.Linear(dim, codebook_size)
 		
 
