@@ -236,7 +236,9 @@ class VQGAN(nn.Module):
     def encode_imgs(self, imgs):
         enc_imgs = self.encoder(imgs)
         enc_imgs = self.pre_quant(enc_imgs)
+        b , c , h , w = enc_imgs.shape
         _, indices, _ = self.codebook(enc_imgs)
+        indices = rearrange(indices, '(b i) -> b i', b=b)
         return indices
 
 
@@ -251,8 +253,8 @@ if __name__ == '__main__':
     out, loss = vqgan(img)
     print(loss)
 
-    img = torch.randn(1, 3, 256, 256)
+    img = torch.randn(2, 3, 256, 256)
     indices = vqgan.encode_imgs(img)
-    img = vqgan.decode_indices(indices)
-    print(img.shape)
+    print(indices.shape)
+   
 

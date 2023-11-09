@@ -9,7 +9,7 @@ def exists(val):
 	return val is not None
 
 # config
-MAX_LENGTH = 256
+MAX_LENGTH = 77
 DEFAULT_T5_NAME = 'google/t5-v1_1-base'
 T5_CONFIGS = {}
 
@@ -62,8 +62,8 @@ class TextEncoder(torch.nn.Module):
 	
 	def forward(self, texts: List[str], device = None):
 	 
-		# if torch.cuda.is_available():
-		#     t5 = t5.cuda()
+		if torch.cuda.is_available():
+		    device = "cuda"
 
 		encoded = self.tokenizer.batch_encode_plus(
 			texts,
@@ -83,20 +83,20 @@ class TextEncoder(torch.nn.Module):
 
 		attn_mask = attn_mask.bool()
 
-		if not exists(device):
-			return encoded_text, attn_mask
+		# if not exists(device):
+		# 	return encoded_text, attn_mask
 
 		encoded_text.to(device)
 		attn_mask.to(device)
 
-		return encoded_text, attn_mask
+		return encoded_text
 
 if __name__== '__main__':
     text = ["hello world", "hi there", "how are you doing?"]
-    T5_Encoder = TextEncoder()
-    encoded_text, attn_mask = T5_Encoder(text)
+    T5_Encoder = TextEncoder().cuda()
+    encoded_text = T5_Encoder(text)
     print(encoded_text.shape)
-    print(attn_mask.shape)
+    # print(attn_mask.shape)
 
 
 

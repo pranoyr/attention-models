@@ -9,7 +9,7 @@ from torch import nn, einsum
 import pathlib
 from pathlib import Path
 import torchvision.transforms as T
-from .t5 import TextEncoder, get_encoded_dim
+from t5 import TextEncoder, get_encoded_dim
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
@@ -39,14 +39,15 @@ class Parti(nn.Module):
 	
 		text_encoder = TextEncoder(t5_name)
 		text_embed_dim = get_encoded_dim(t5_name)
-		stext_embed_proj = nn.Linear(text_embed_dim, dim, bias = False) 
+		text_embed_proj = nn.Linear(text_embed_dim, dim, bias = False) 
 		
 		self.text_encoder =  nn.Sequential(text_encoder, text_embed_proj)
 		
   
-		#### Image Decoder  ####
+		#### Image Decoder ####
 	
 		self.start_token = nn.Parameter(torch.randn(dim))
+		self.token_emb = nn.Embedding(codebook_size, dim)
 		self.pos_enc =  nn.Parameter(torch.randn(1, dim))
 		self.vqgan = VQGAN(dim, codebook_size)
 		self.transformer_decoder = Decoder(dim, n_heads, d_head, depth)
@@ -59,33 +60,31 @@ class Parti(nn.Module):
 		texts : List[str],
 		imgs: Tensor
 		):
-		device, b, n = x.device, *x.shape
 
-		# encode text
-		text_embeds, context_mask = self.text_encoder(texts, output_device=device)
-		context = self.text_embed_proj(text_embeds)
-		
+		device = imgs.device
+		b = imgs.shape[0]
 
-		# encode image
+		#### TEXT ENCODER ###
+		text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
+
+		####  IMAGE DECODER ###
 		indices = self.vqgan.encode_imgs(imgs)
-		x = self.token_emb(indices)
-
-		x = self.pos_emb(x) + x
-
-
+		labels = indices.clone()
+		# remove the last token and add a start token
+		indices = indices[:, :-1]
+		x = self.token_emb(indices) # (batch_size, seq_len, dim)
+		# add positional encoding
+		x = x + self.pos_enc
 		# add start token
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
 		x = torch.cat((start_token, x), dim=1)
 
-		x = self.init_norm(x)
-		context = self.enc_norm(context)
-
 		# decoder
-		x = self.transformer_decoder(x, context)
+		x = self.transformer_decoder(x, text_embeds)
 
 		# to logits
 		logits = self.to_logits(x)
-
+		
 		# calculate loss
 		loss = F.cross_entropy(rearrange(logits, 'b n c -> b c n'), labels)
 		return loss
@@ -124,9 +123,11 @@ class Parti(nn.Module):
 
 
 if __name__=="__main__":
-	imgs = torch.randn(2, 3, 256, 256)
+	imgs = torch.randn(2, 3, 256, 256).cuda()
 	texts = ["this is a test", "this is another test"]
 	
+
+	dim = 512
 	encoder_params = dict(
 		t5_name = "t5-large",
 	)
@@ -138,6 +139,6 @@ if __name__=="__main__":
 		depth= 6)
  
  
-	model = Parti(dim, **encoder_params, **decoder_params)
-	loss = model(imgs, texts)
+	model = Parti(dim, **encoder_params, **decoder_params).cuda()
+	loss = model(texts, imgs)
 	loss.backward()

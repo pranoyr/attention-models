@@ -6,7 +6,6 @@ import torch.nn.functional as F
 from positional_encoding import PositionalEncoding
 
 
-# Attention is all you need
 
 def _get_clones(block, N=6) -> nn.ModuleList:
     block_stack = nn.ModuleList([copy.deepcopy(block) for _ in range(N)])
@@ -156,6 +155,7 @@ class Transformer(nn.Module):
                  dec_depth=6,
                  n_classes=None):
         super().__init__()
+        
 
         self.encoder = Encoder(dim=d_model, n_heads=n_heads,
                                d_head=d_head, depth=enc_depth)
