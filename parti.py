@@ -104,27 +104,7 @@ class Parti(nn.Module):
 			return loss
 
 		else:
-				# encode text
-				text_embeds = self.text_encoder(text_encoder)
-			
-				start = torch.empty((1,0), dtype=torch.long, device="cuda")
-
-				for step in range(0, 1024):
-					dec_output = self.forward_with_cond_scale(gen_seq, context=context, context_mask=context_mask)[:,-1]
-					# dec_output = self.forward(gen_seq, context=context, context_mask=context_mask)[:,-1]
-
-		
-					# dec_output = F.softmax(dec_output, dim=1)
-					# dec_output = torch.argmax(dec_output, dim=1) 
-		
-
-					filtered_logits = top_k(dec_output, thres = 0.9)
-					dec_output = gumbel_sample(filtered_logits, temperature = 1, dim = -1)
-					
-					dec_output = rearrange(dec_output, 'b -> b 1')
-					gen_seq = torch.cat([gen_seq, dec_output], dim=-1)  #  gen -> (1,1024)
-					#break
-
+				#TODO : generate images from text
 
 
 
