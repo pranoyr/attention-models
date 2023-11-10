@@ -65,20 +65,20 @@ class Parti(nn.Module):
 		# text encoder
 		text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
 
+		# convert images to indices
 		img_token_indices = self.vqgan.encode_imgs(imgs)
 		labels = img_token_indices.clone()
-		# remove the last token and add a start token
+		# remove the last token
 		img_token_indices = img_token_indices[:, :-1]
+		#  convert indices to embeddings
 		img_token_embeds = self.token_emb(img_token_indices) # (batch_size, seq_len, dim)
 		# add positional encoding
 		img_token_embeds += self.pos_enc
 		# add start token
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
 		img_token_embeds = torch.cat((start_token, img_token_embeds), dim=1)
-
 		# decoder
 		x = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds)
-
 		# to logits
 		logits = self.to_logits(x)
 
