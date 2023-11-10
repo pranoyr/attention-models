@@ -105,6 +105,7 @@ class Parti(nn.Module):
 
 		else:
 				#TODO : generate images from text
+   				 pass
 
 
 
