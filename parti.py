@@ -62,6 +62,7 @@ class Parti(nn.Module):
 		device = imgs.device
 		b = imgs.shape[0]
 
+		# text encoder
 		text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
 
 		img_token_indices = self.vqgan.encode_imgs(imgs)
