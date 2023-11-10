@@ -53,8 +53,6 @@ class Parti(nn.Module):
 		self.transformer_decoder = Decoder(dim, n_heads, d_head, depth)
 		self.to_logits = nn.Linear(dim, codebook_size)
 		
-
-
 	def forward(
 		self,
 		texts : List[str],
@@ -64,10 +62,8 @@ class Parti(nn.Module):
 		device = imgs.device
 		b = imgs.shape[0]
 
-		#### TEXT ENCODER ###
 		text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
 
-		####  IMAGE DECODER ###
 		indices = self.vqgan.encode_imgs(imgs)
 		labels = indices.clone()
 		# remove the last token and add a start token
@@ -84,7 +80,7 @@ class Parti(nn.Module):
 
 		# to logits
 		logits = self.to_logits(x)
-		
+
 		# calculate loss
 		loss = F.cross_entropy(rearrange(logits, 'b n c -> b c n'), labels)
 		return loss
