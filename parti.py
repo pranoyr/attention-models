@@ -9,7 +9,7 @@ from torch import nn, einsum
 import pathlib
 from pathlib import Path
 import torchvision.transforms as T
-from t5 import TextEncoder, get_encoded_dim
+from t5 import T5Encoder, get_encoded_dim
 from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 
@@ -22,6 +22,21 @@ from transformer import Decoder
 def exists(val):
 	return val is not None
 
+
+class TextEncoder(torch.nn.Module):
+	def __init__(self, dim, t5_name):
+		super().__init__()
+	
+		self.t5_encoder = T5Encoder(t5_name)
+		text_embed_dim = get_encoded_dim(t5_name)
+		self.text_embed_proj = nn.Linear(text_embed_dim, dim, bias = False) 
+	
+	def forward(self, texts: List[str]):
+		context_mask, text_embeds = self.t5_encoder(texts)
+		text_embeds = self.text_embed_proj(text_embeds)
+		return context_mask, text_embeds
+		
+		
 
 class Parti(nn.Module):
 	def __init__(
@@ -37,20 +52,15 @@ class Parti(nn.Module):
 		self.dim = dim
 		
 		#### Text Encoder  ####
-	
-		text_encoder = TextEncoder(t5_name)
-		text_embed_dim = get_encoded_dim(t5_name)
-		text_embed_proj = nn.Linear(text_embed_dim, dim, bias = False) 
+		self.text_encoder = TextEncoder(dim, t5_name)
 		
-		self.text_encoder =  nn.Sequential(text_encoder, text_embed_proj)
-		
-  
-		#### Image Decoder ####
-	
+		#### Image  Tokenizer ####
 		self.start_token = nn.Parameter(torch.randn(dim))
 		self.token_emb = nn.Embedding(codebook_size, dim)
 		self.pos_enc =  nn.Parameter(torch.randn(1, dim))
 		self.vqgan = VQGAN(dim, codebook_size)
+		
+		#### Transformer Decoder ####
 		self.transformer_decoder = Decoder(dim, n_heads, d_head, depth)
 		self.to_logits = nn.Linear(dim, codebook_size)
 		
@@ -63,8 +73,9 @@ class Parti(nn.Module):
 		device = imgs.device
 		b = imgs.shape[0]
 
+
 		# text encoder
-		text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
+		context_mask , text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
   
 		if exists(imgs):
 			# convert images to indices
@@ -79,8 +90,12 @@ class Parti(nn.Module):
 			# add start token
 			start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
 			img_token_embeds = torch.cat((start_token, img_token_embeds), dim=1)
+   
 			# decoder
-			x = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds)
+			# causal mask for transformer decoder
+			i = j = img_token_embeds.shape[1]
+			causal_mask = torch.ones((i, j), dtype=torch.bool, device=device).triu(j - i + 1)
+			x = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask, causal_mask=causal_mask)
 			# to logits
 			logits = self.to_logits(x)
 
@@ -114,7 +129,9 @@ class Parti(nn.Module):
 
 
 if __name__=="__main__":
-	imgs = torch.randn(2, 3, 256, 256).cuda()
+	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+	
+	imgs = torch.randn(2, 3, 256, 256).to(device)
 	texts = ["this is a test", "this is another test"]
 	
 
@@ -129,13 +146,13 @@ if __name__=="__main__":
 		d_head	= 64,
 		depth= 6)
  
-	# Training
-	model = Parti(dim, **encoder_params, **decoder_params).cuda()
+
+	model = Parti(dim, **encoder_params, **decoder_params).to(device)
 	loss = model(texts, imgs)
 	loss.backward()
  
-	# Inference
-	model.eval()
-	with torch.no_grad():
-		imgs = model(texts)
-	print(imgs.shape)
+	# # Inference
+	# model.eval()
+	# with torch.no_grad():
+	# 	imgs = model(texts)
+	# print(imgs.shape)

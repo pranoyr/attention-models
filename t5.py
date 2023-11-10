@@ -52,7 +52,7 @@ def get_encoded_dim(name):
 
 # encoding text
 
-class TextEncoder(torch.nn.Module):
+class T5Encoder(torch.nn.Module):
 	def __init__(self, name = DEFAULT_T5_NAME):
 		super().__init__()
 		self.name = name
@@ -96,7 +96,7 @@ if __name__== '__main__':
     T5_Encoder = TextEncoder().cuda()
     attn_mask, encoded_text = T5_Encoder(text)
     print(encoded_text.shape)
-    print(attn_mask)
+    print(attn_mask.shape)
 
 
 
