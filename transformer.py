@@ -87,7 +87,7 @@ class DecoderLayer(nn.Module):
         self.norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, dec_inp, enc_out, mask=None):
+    def forward(self, dec_inp, context, mask=None):
 
         # self attention
         attn_out = self.multihead_attention(q=dec_inp, k=dec_inp, v=dec_inp, mask=mask)
@@ -97,7 +97,7 @@ class DecoderLayer(nn.Module):
         dec_inp = self.dropout(self.norm(dec_inp))
 
         # cross attention
-        attn_out = self.multihead_attention(q=dec_inp, k=enc_out, v=enc_out)
+        attn_out = self.multihead_attention(q=dec_inp, k=context, v=context)
 
         # ADD & NORM
         dec_inp = attn_out + dec_inp
@@ -120,11 +120,11 @@ class Decoder(nn.Module):
         decoder_layer = DecoderLayer(dim, n_heads, d_head)
         self.layers = _get_clones(decoder_layer, depth)
     
-    def forward(self, dec_in, enc_out, mask=None):
+    def forward(self, dec_in, context, mask=None):
 
         # input to the decoder is the previous dec output
         for layer in self.layers:
-            dec_out = layer(dec_in, enc_out, mask=mask)
+            dec_out = layer(dec_in, context, mask=mask)
             dec_in = dec_out
 
         return dec_out
@@ -179,10 +179,10 @@ class Transformer(nn.Module):
         
         # Encoder
         x = self.pos_enc(x)    
-        enc_out = self.encoder(x)
+        context = self.encoder(x)
         # Decoder
         tgt = self.pos_enc(tgt)
-        x = self.decoder(tgt, enc_out, mask=tgt_mask)
+        x = self.decoder(dec_in=tgt, context=context, mask=tgt_mask)
         
         x = self.linear(x)
         return x

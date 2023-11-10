@@ -64,19 +64,19 @@ class Parti(nn.Module):
 
 		text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
 
-		indices = self.vqgan.encode_imgs(imgs)
-		labels = indices.clone()
+		img_token_indices = self.vqgan.encode_imgs(imgs)
+		labels = img_token_indices.clone()
 		# remove the last token and add a start token
-		indices = indices[:, :-1]
-		x = self.token_emb(indices) # (batch_size, seq_len, dim)
+		img_token_indices = img_token_indices[:, :-1]
+		img_token_embeds = self.token_emb(img_token_indices) # (batch_size, seq_len, dim)
 		# add positional encoding
-		x = x + self.pos_enc
+		img_token_embeds += self.pos_enc
 		# add start token
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
-		x = torch.cat((start_token, x), dim=1)
+		img_token_embeds = torch.cat((start_token, img_token_embeds), dim=1)
 
 		# decoder
-		x = self.transformer_decoder(x, text_embeds)
+		x = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds)
 
 		# to logits
 		logits = self.to_logits(x)
@@ -125,7 +125,7 @@ if __name__=="__main__":
 
 	dim = 512
 	encoder_params = dict(
-		t5_name = "t5-large",
+		t5_name = "google/t5-v1_1-base",
 	)
  
 	decoder_params = dict(
