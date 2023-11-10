@@ -89,14 +89,14 @@ class TextEncoder(torch.nn.Module):
 		encoded_text.to(device)
 		attn_mask.to(device)
 
-		return encoded_text
+		return attn_mask, encoded_text
 
 if __name__== '__main__':
     text = ["hello world", "hi there", "how are you doing?"]
     T5_Encoder = TextEncoder().cuda()
-    encoded_text = T5_Encoder(text)
+    attn_mask, encoded_text = T5_Encoder(text)
     print(encoded_text.shape)
-    # print(attn_mask.shape)
+    print(attn_mask)
 
 
 

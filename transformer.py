@@ -58,10 +58,10 @@ class EncoderLayer(nn.Module):
         self.norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, x):
+    def forward(self, x, context_mask=None):
 
         # self attention
-        attn_out = self.multihead_attention(q=x, k=x, v=x)
+        attn_out = self.multihead_attention(q=x, k=x, v=x, context_mask=context_mask)
 
        # ADD & NORM
         x = attn_out + x
@@ -87,17 +87,17 @@ class DecoderLayer(nn.Module):
         self.norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, dec_inp, context, mask=None):
+    def forward(self, dec_inp, context, context_mask=None, causal_mask=None):
 
         # self attention
-        attn_out = self.multihead_attention(q=dec_inp, k=dec_inp, v=dec_inp, mask=mask)
+        attn_out = self.multihead_attention(q=dec_inp, k=dec_inp, v=dec_inp, causal_mask=causal_mask)
 
         # ADD & NORM
         dec_inp = attn_out + dec_inp
         dec_inp = self.dropout(self.norm(dec_inp))
 
         # cross attention
-        attn_out = self.multihead_attention(q=dec_inp, k=context, v=context)
+        attn_out = self.multihead_attention(q=dec_inp, k=context, v=context, context_mask=context_mask)
 
         # ADD & NORM
         dec_inp = attn_out + dec_inp
@@ -120,11 +120,11 @@ class Decoder(nn.Module):
         decoder_layer = DecoderLayer(dim, n_heads, d_head)
         self.layers = _get_clones(decoder_layer, depth)
     
-    def forward(self, dec_in, context, mask=None):
+    def forward(self, dec_in, context, context_mask=None, causal_mask=None):
 
         # input to the decoder is the previous dec output
         for layer in self.layers:
-            dec_out = layer(dec_in, context, mask=mask)
+            dec_out = layer(dec_in, context, context_mask=context_mask, causal_mask=causal_mask)
             dec_in = dec_out
 
         return dec_out
@@ -138,10 +138,10 @@ class Encoder(nn.Module):
 
         self.layers = _get_clones(encoder_layer, depth)
     
-    def forward(self, x):
+    def forward(self, x, context_mask=None):
 
         for layer in self.layers:
-            x = layer(x)
+            x = layer(x, context_mask=context_mask)
 
         return x
 
@@ -167,22 +167,28 @@ class Transformer(nn.Module):
 
         self.linear = nn.Linear(d_model, n_classes)
     
-    def get_decoder_mask(self, tgt):
-        # causal mask for decoder
-        i, j = tgt.shape[1], tgt.shape[1]  # i, j - timestep of Q, V
-        tgt_mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
-        return tgt_mask
+    def get_decoder_mask(self, x, tgt):
+        # causal mask | causal mask is a 2D triangular matrix with True values on the upper triangle.
+        i = j = tgt.shape[1]
+        causal_mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
+        
+        # context mask | context mask is 2D mask with True values on all elements. 
+        b , t , d = x.shape
+        context_mask = torch.ones((b, t), dtype=torch.bool)
+
+        return context_mask, causal_mask
 
     def forward(self, x, tgt):
-
-        tgt_mask = self.get_decoder_mask(tgt)
+        
+        # get masks
+        context_mask , causal_mask = self.get_decoder_mask(x, tgt)
         
         # Encoder
         x = self.pos_enc(x)    
-        context = self.encoder(x)
+        context = self.encoder(x, context_mask=context_mask)
         # Decoder
         tgt = self.pos_enc(tgt)
-        x = self.decoder(dec_in=tgt, context=context, mask=tgt_mask)
+        x = self.decoder(dec_in=tgt, context=context, context_mask=context_mask, causal_mask=causal_mask)
         
         x = self.linear(x)
         return x
