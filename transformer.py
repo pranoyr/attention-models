@@ -203,8 +203,8 @@ if __name__ == '__main__':
         dec_depth=6,
         n_classes=10)
 
-    src_seq = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
-    target_seq = torch.randn(2, 20, 512)  # (b, timesteps_q, d_model)
+    src_seq = torch.randn(2, 10, 512)  # (b, timesteps_src, d_model)
+    target_seq = torch.randn(2, 20, 512)  # (b, timesteps_tgt, d_model)
 
     out = transformer(src_seq, target_seq)
     print(out.shape)

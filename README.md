@@ -19,18 +19,18 @@ Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all yo
 
 ```python
 transformer = Transformer(
-	d_model=512,
-	n_heads=16,
-	d_head=64,
-	enc_depth=6,
-	dec_depth=6,
-	n_classes=10)
+        d_model=512,
+        n_heads=16,
+        d_head=64,
+        enc_depth=6,
+        dec_depth=6,
+        n_classes=10)
 
-src_seq = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
-target_seq = torch.randn(2, 20, 512)  # (b, timesteps_q, d_model)
+src_seq = torch.randn(2, 10, 512)  # (b, timesteps_src, d_model)
+target_seq = torch.randn(2, 20, 512)  # (b, timesteps_tgt, d_model)
 
 out = transformer(src_seq, target_seq)
-print(out.shape) # (b, timesteps, num_classes)
+print(out.shape)
 
 
 ```
