@@ -41,9 +41,7 @@ print(out.shape) # (b, timesteps, num_classes)
 Implementation of Multi-Head Attention
 
 ```python
-attention = MultiHeadAttention(dim=512,
-								num_heads=16,
-							   	dim_head=64)
+attention = MultiHeadAttention(dim=512, num_heads=16, dim_head=64)
 	
 q = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
 k = torch.randn(2, 10, 512)  # (b, timesteps_k, dim)
