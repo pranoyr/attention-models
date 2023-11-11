@@ -132,10 +132,10 @@ print(imgs.shape)
 ```
 
 
+## Acknowledgement
+A Big Thanks to <a href="https://github.com/lucidrains">for his contributions. You repos are always a reference book for me</a>
+This library<a href="https://einops.rocks/">made my life easier</a>
+Can't even think of Machine Larning without <a href="https://pytorch.org/">
 
 
 
-
-
-## License
-This project is licensed under the MIT License
