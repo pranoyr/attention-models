@@ -31,8 +31,7 @@ src_seq = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
 target_seq = torch.randn(2, 20, 512)  # (b, timesteps_q, d_model)
 
 out = transformer(src_seq, target_seq)
-print(out.shape)
-
+print(out.shape) # (b, timesteps, num_classes)
 
 
 ```
