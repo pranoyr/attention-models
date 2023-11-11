@@ -133,9 +133,9 @@ print(imgs.shape)
 
 
 ## Acknowledgement
-- A Big Thanks to <a href="https://github.com/lucidrains">for his contributions. You repos are always a reference book for me</a>
-- This library<a href="https://einops.rocks/">made my life easier</a>
-- Can't even think of Machine Larning without <a href="https://pytorch.org/">
+- A Big Thanks to <a href="https://github.com/lucidrains">Lucidrians</a> for his contributions. You repos are always a reference book for me
+- <a href="https://einops.rocks/">Einops</a> made my life easier
+- Can't even think of Machine Larning without <a href="https://pytorch.org/"> Pytorch</a
 
 
 
