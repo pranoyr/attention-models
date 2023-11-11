@@ -18,6 +18,9 @@ The purpose of this repository is not to give the best implementation , but to g
 Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all you need</a>,
 
 ```python
+import torch
+from transformer import Transformer
+
 transformer = Transformer(
         d_model=512,
         n_heads=16,
@@ -40,6 +43,9 @@ print(out.shape)
 Implementation of Multi-Head Attention
 
 ```python
+import torch
+from multihead_attention import MultiHeadAttention
+
 attention = MultiHeadAttention(dim=512, num_heads=16, dim_head=64)
 	
 q = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
@@ -63,7 +69,10 @@ print(output.shape) # (b, timesteps, dim)
 Implementation of <a href="https://arxiv.org/abs/2010.11929">Vision Transformer</a>,
 
 ```python
-model = Vit(512, num_classes=10)
+import torch
+from vit import ViT
+
+model = ViT(512, num_classes=10)
 
 img_batch = torch.randn(2, 3, 256, 256)
 out = model(img_batch)
@@ -78,6 +87,10 @@ print(out.shape) # (b, num_classes)
 Implementation of <a href="https://sites.research.google/parti/">Parti</a>,
 
 ```python
+import torch
+from vqgan import VQGAN
+from parti import Parti
+
 imgs = torch.randn(2, 3, 256, 256).to(device)
 texts = ["this is a test", "this is another test"]
 	
@@ -112,6 +125,8 @@ print(imgs.shape)
 Implementation of <a href="https://github.com/CompVis/taming-transformers">VQGAN</a>,
 
 ```python
+import torch
+from vqgan import VQGAN
 
 codebook_dim = 256
 codebook_size = 8192

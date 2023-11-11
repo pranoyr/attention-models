@@ -6,9 +6,9 @@ from transformer import Encoder
 
 
 
-class Vit(nn.Module):
+class ViT(nn.Module):
     def __init__(self, dim, patch_size = 64, n_heads = 8, d_head = 64, depth = 6, num_classes = None):
-        super(Vit, self).__init__()
+        super(ViT, self).__init__()
         
         self.dim = dim
         self.patch_size = patch_size
@@ -49,11 +49,12 @@ class Vit(nn.Module):
 
         return x
     
-model = Vit(512, num_classes=10)
+if __name__ == '__main__':
+    model = ViT(512, num_classes=10)
 
-img_batch = torch.randn(2, 3, 256, 256)
-out = model(img_batch)
-print(out.shape)
+    img_batch = torch.randn(2, 3, 256, 256)
+    out = model(img_batch)
+    print(out.shape)
 
 
     
