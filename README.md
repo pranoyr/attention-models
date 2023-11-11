@@ -15,8 +15,7 @@ The purpose of this repository is not to give the best implementation , but to g
 
 ## Attention is All you Need
 
-
-[[Attention is all you need](https://arxiv.org/abs/1706.03762)] 
+Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all you need</a>,
 
 ```python
 
