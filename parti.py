@@ -47,13 +47,12 @@ class Parti(nn.Module):
 		#### Text Encoder  ####
 		self.text_encoder = TextEncoder(dim, t5_name)
 		
-		#### Image  Tokenizer ####
+		#### Transformer Decoder ####
 		self.start_token = nn.Parameter(torch.randn(dim))
 		self.token_emb = nn.Embedding(codebook_size, dim)
 		self.pos_enc =  nn.Parameter(torch.randn(1, dim))
 		self.vq = vq
 		
-		#### Transformer Decoder ####
 		self.transformer_decoder = Decoder(dim, n_heads, d_head, depth)
 		self.to_logits = nn.Linear(dim, codebook_size)
 		
