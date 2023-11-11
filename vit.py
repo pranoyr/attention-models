@@ -2,8 +2,6 @@ import torch
 import torch.nn as nn
 from einops import rearrange, reduce, repeat, pack
 from torch import einsum
-import cv2
-from positional_encoding import AbsolutePositionalEmbedding
 from transformer import Encoder
 
 
