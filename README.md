@@ -9,7 +9,7 @@ The purpose of this repository is not to give the best implementation , but to g
   * [Attention is All you Need](#attention-is-all-you-need) (Transformer)
   * [Multi Head Attention](#multi-head-attention) 
   * [Vision Transformer](#vision-transformer) (Image Classification Transformer)
-  * [Vector Quantised GAN](#vqgan)(VQGAN)
+  * [Vector Quantised GAN](#vqgan) (VQGAN)
   * [Parti](#parti) (Google's text to image)
 
 
