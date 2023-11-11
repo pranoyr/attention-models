@@ -18,7 +18,7 @@ The purpose of this repository is not to give the best implementation , but to g
 
 [[Attention is all you need](https://arxiv.org/abs/1706.03762)] 
 
-```
+```python
 
 transformer = Transformer(
     d_model=512,
