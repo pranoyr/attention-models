@@ -10,7 +10,7 @@ import pathlib
 from pathlib import Path
 import torchvision.transforms as T
 from t5 import T5Encoder, get_encoded_dim
-from einops import rearrange, repeat
+from einops import rearrange, repeat, pack
 from einops.layers.torch import Rearrange
 
 from typing import Callable, Optional, List
@@ -70,42 +70,66 @@ class Parti(nn.Module):
 		imgs: Tensor = None
 		):
 
-		device = imgs.device
 		b = imgs.shape[0]
-
+		device = imgs.device
 
 		# text encoder
 		context_mask , text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
   
-		if exists(imgs):
-			# convert images to indices
-			img_token_indices = self.vqgan.encode_imgs(imgs)
-			labels = img_token_indices.clone()
-			# remove the last token
-			img_token_indices = img_token_indices[:, :-1]
-			#  convert indices to embeddings
-			img_token_embeds = self.token_emb(img_token_indices) # (batch_size, seq_len, dim)
+		# convert images to indices
+		img_token_indices = self.vqgan.encode_imgs(imgs)
+		labels = img_token_indices.clone()
+		# remove the last token
+		img_token_indices = img_token_indices[:, :-1]
+		#  convert indices to embeddings
+		img_token_embeds = self.token_emb(img_token_indices) # (batch_size, seq_len, dim)
+		# add positional encoding
+		img_token_embeds += self.pos_enc
+		# add start token
+		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
+		img_token_embeds = torch.cat((start_token, img_token_embeds), dim=1)
+   
+		# decoder
+		# causal mask for transformer decoder
+		i = j = img_token_embeds.shape[1]
+		causal_mask = torch.ones((i, j), dtype=torch.bool, device=device).triu(j - i + 1)
+		x = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask, causal_mask=causal_mask)
+		# to logits
+		logits = self.to_logits(x)
+
+		# calculate loss
+		loss = F.cross_entropy(rearrange(logits, 'b n c -> b c n'), labels)
+		return loss
+
+	def generate(self, texts : List[str]):
+
+		b = len(texts)
+		context_mask , text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
+
+		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
+  
+		indices = torch.zeros(b, 0, dtype=torch.long, device=text_embeds.device)			
+		for i in range(256):
+		
+			img_token_embeds = self.token_emb(indices) # (batch_size, seq_len, dim)
 			# add positional encoding
 			img_token_embeds += self.pos_enc
 			# add start token
-			start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
 			img_token_embeds = torch.cat((start_token, img_token_embeds), dim=1)
-   
 			# decoder
-			# causal mask for transformer decoder
-			i = j = img_token_embeds.shape[1]
-			causal_mask = torch.ones((i, j), dtype=torch.bool, device=device).triu(j - i + 1)
-			x = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask, causal_mask=causal_mask)
+			dec_out = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask)
 			# to logits
-			logits = self.to_logits(x)
+			logits = self.to_logits(dec_out)
+   
+			# sample
+			probs = F.softmax(logits, dim=-1)
+			idx = torch.argmax(probs, dim=-1)[:,-1]
+			idx = rearrange(idx, 'b -> b 1')
+			indices = pack((indices, idx), "b *")[0]
+		
 
-			# calculate loss
-			loss = F.cross_entropy(rearrange(logits, 'b n c -> b c n'), labels)
-			return loss
-
-		else:
-				#TODO : generate images from text
-   				 pass
+		imgs = self.vqgan.decode_indices(indices)
+		return(imgs)
 
 
 
@@ -132,8 +156,8 @@ if __name__=="__main__":
 	loss = model(texts, imgs)
 	loss.backward()
  
-	# # Inference
-	# model.eval()
-	# with torch.no_grad():
-	# 	imgs = model(texts)
-	# print(imgs.shape)
+	# Inference
+	model.eval()
+	with torch.no_grad():
+		imgs = model.generate(texts)
+	print(imgs.shape)

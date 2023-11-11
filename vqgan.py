@@ -169,8 +169,8 @@ class Codebook(nn.Module):
 
     def indices_to_embeddings(self, indices):
         embeds = self.embedding(indices)
-        h = w = embeds.shape[0] ** 0.5 
-        embeds = rearrange(embeds, '(b h w) d -> b d h w', h=int(h), w=int(w))
+        h = w = embeds.shape[1] ** 0.5 
+        embeds = rearrange(embeds, 'b (h w) d -> b d h w', h=int(h), w=int(w))
         return embeds
 
         
@@ -255,6 +255,7 @@ if __name__ == '__main__':
 
     img = torch.randn(2, 3, 256, 256)
     indices = vqgan.encode_imgs(img)
-    print(indices.shape)
+    imgs = vqgan.decode_indices(indices)
+    print(imgs.shape)
    
 
