@@ -89,7 +89,7 @@ vq = VQGAN(codebook_dim, codebook_size)
 # Parti 
 dim = 512
 encoder_params = dict(
-	t5_name = "google/t5-v1_1-base",
+	t5_name = "google/t5-v1_1-base"
 )
  
 decoder_params = dict(
