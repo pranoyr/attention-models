@@ -8,7 +8,7 @@ The purpose of this repository is not to give the best implementation , but to g
 ## Table of Contents
   * [Attention is All you Need](#attention-is-all-you-need)
   * [Multi Head Attention](#multi-head-attention)
-  * [Vision Transformer](#vit)
+  * [Vision Transformer](#vision-transformer)
   * [VQ-GAN](#vqgan)
   * [Parti](#parti)
 
@@ -36,7 +36,7 @@ print(out.shape) # (b, timesteps, num_classes)
 
 ```
 
-## Multi Head
+## Multi Head Attention
 
 Implementation of Multi-Head Attention
 
@@ -62,7 +62,7 @@ print(output.shape) # (b, timesteps, dim)
 
 
 
-## ViT
+## Vision Transformer
 
 Implementation of <a href="https://arxiv.org/abs/2010.11929">Vision Transformer</a>,
 
@@ -78,7 +78,7 @@ print(out.shape) # (b, num_classes)
 ```
 
 
-## parti
+## Parti
 
 Implementation of <a href="https://sites.research.google/parti/">Parti</a>,
 
@@ -114,7 +114,7 @@ print(imgs.shape)
 
 
 ```
-## vqgan
+## VQGAN
 
 Implementation of <a href="https://github.com/CompVis/taming-transformers">VQGAN</a>,
 
