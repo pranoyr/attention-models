@@ -44,7 +44,7 @@ class PositionalEncoding(nn.Module):
 
 if __name__ == '__main__':
 	pe = PositionalEncoding(512, max_len=5000)
-	x = torch.zeros(1, 100, 512) # (batch_size, seq_len, d_model)
+	x = torch.zeros(1, 100, 512) # (batch_size, seq_len, dim)
 	z = pe(x)
 	print(z.shape)
 
