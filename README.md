@@ -132,7 +132,7 @@ print(imgs.shape)
 
 
 ## Acknowledgement
-- A Big Thanks to <a href="https://github.com/lucidrains">Lucidrians</a> for his contributions. Your repos are always a reference book for me
+- A Big Thanks to <a href="https://github.com/lucidrains">Lucidrians</a> for his open contributions. Your repos are always a reference book for me
 - <a href="https://einops.rocks/">Einops</a> made my life easier
 - Can't even think of Machine Learning without <a href="https://pytorch.org/"> Pytorch</a>
 
