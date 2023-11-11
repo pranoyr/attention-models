@@ -7,7 +7,7 @@ The purpose of this repository is not to give the best implementation , but to g
 
 ## Table of Contents
   * [Attention is All you Need](#attention-is-all-you-need)
-  * [Vision Transformer](#vitd)
+  * [Vision Transformer](#vit)
   * [VQ-GAN](#vqgan)
   * [Parti](#parti)
   * [Multi Head Attention](#multi-head-attention)
@@ -37,7 +37,7 @@ print(out.shape)
 
 ```
 
-## VIT
+## ViT
 
 Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all you need</a>,
 
