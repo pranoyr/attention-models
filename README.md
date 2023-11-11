@@ -6,11 +6,11 @@ The purpose of this repository is not to give the best implementation , but to g
 
 
 ## Table of Contents
-	* [Attention is All you Need](#attention-is-all-you-need)
-	* [Multi Head Attention](#multi-head-attention)
-	* [Vision Transformer](#vision-transformer)
-	* [VQ-GAN](#vqgan)
-	* [Parti](#parti)
+  * [Attention is All you Need](#attention-is-all-you-need)
+  * [Multi Head Attention](#multi-head-attention)
+  * [Vision Transformer](#vision-transformer)
+  * [VQ-GAN](#vqgan)
+  * [Parti](#parti)
 
 
 ## Attention is All you Need
@@ -19,12 +19,12 @@ Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all yo
 
 ```python
 transformer = Transformer(
-				d_model=512,
-				n_heads=16,
-				d_head=64,
-				enc_depth=6,
-				dec_depth=6,
-				n_classes=10)
+        d_model=512,
+        n_heads=16,
+        d_head=64,
+        enc_depth=6,
+        dec_depth=6,
+        n_classes=10)
 
 src_seq = torch.randn(2, 10, 512)  # (b, timesteps_src, d_model)
 target_seq = torch.randn(2, 20, 512)  # (b, timesteps_tgt, d_model)
@@ -78,6 +78,7 @@ print(out.shape) # (b, num_classes)
 Implementation of <a href="https://sites.research.google/parti/">Parti</a>,
 
 ```python
+
 	imgs = torch.randn(2, 3, 256, 256).to(device)
 	texts = ["this is a test", "this is another test"]
 	
@@ -126,7 +127,7 @@ img = torch.randn(2, 3, 256, 256)
 indices = vqgan.encode_imgs(img)
 imgs = vqgan.decode_indices(indices)
 print(imgs.shape)
-	 
+   
 
 ```
 
