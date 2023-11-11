@@ -9,8 +9,8 @@ from einops import rearrange, repeat, pack
 from typing import Callable, Optional, List
 
 from einops import rearrange, repeat
-from vqgan import VQGAN
 from transformer import Decoder
+from vqgan import VQGAN
 
 def exists(val):
 	return val is not None
@@ -35,8 +35,8 @@ class Parti(nn.Module):
 	def __init__(
 		self,
 		dim,
+		vq,
 		t5_name,
-		codebook_size,
 		n_heads,
 		d_head,
 		depth,
@@ -51,7 +51,7 @@ class Parti(nn.Module):
 		self.start_token = nn.Parameter(torch.randn(dim))
 		self.token_emb = nn.Embedding(codebook_size, dim)
 		self.pos_enc =  nn.Parameter(torch.randn(1, dim))
-		self.vqgan = VQGAN(dim, codebook_size)
+		self.vq = vq
 		
 		#### Transformer Decoder ####
 		self.transformer_decoder = Decoder(dim, n_heads, d_head, depth)
@@ -70,7 +70,7 @@ class Parti(nn.Module):
 		context_mask , text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
   
 		# convert images to indices
-		img_token_indices = self.vqgan.encode_imgs(imgs)
+		img_token_indices = self.vq.encode_imgs(imgs)
 		labels = img_token_indices.clone()
 		# remove the last token
 		img_token_indices = img_token_indices[:, :-1]
@@ -121,7 +121,7 @@ class Parti(nn.Module):
 			indices = pack((indices, idx), "b *")[0]
 		
 
-		imgs = self.vqgan.decode_indices(indices)
+		imgs = self.vq.decode_indices(indices)
 		return(imgs)
 
 
@@ -132,20 +132,23 @@ if __name__=="__main__":
 	imgs = torch.randn(2, 3, 256, 256).to(device)
 	texts = ["this is a test", "this is another test"]
 	
+	# Vector Quantizer 
+	codebook_dim = 256
+	codebook_size = 8192
+	vq = VQGAN(codebook_dim, codebook_size)
 
+	# Parti 
 	dim = 512
 	encoder_params = dict(
 		t5_name = "google/t5-v1_1-base",
 	)
  
 	decoder_params = dict(
-		codebook_size = 8192,
 		n_heads = 8,
 		d_head	= 64,
 		depth= 6)
  
-
-	model = Parti(dim, **encoder_params, **decoder_params).to(device)
+	model = Parti(dim, vq, **encoder_params, **decoder_params).to(device)
 	loss = model(texts, imgs)
 	loss.backward()
  
