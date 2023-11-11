@@ -9,8 +9,8 @@ The purpose of this repository is not to give the best implementation , but to g
   * [Attention is All you Need](#attention-is-all-you-need)
   * [Multi Head Attention](#multi-head-attention)
   * [Vision Transformer](#vision-transformer)
-  * [VQ-GAN](#vqgan)
-  * [Parti](#parti)
+  * [VQ-GAN](#vqgan) 
+  * [Parti](#parti) (Google's text to image)
 
 
 ## Attention is All you Need
