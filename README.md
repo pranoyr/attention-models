@@ -39,24 +39,15 @@ print(out.shape)
 
 ## ViT
 
-Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all you need</a>,
+Implementation of <a href="https://arxiv.org/abs/2010.11929">Vision Transformer</a>,
 
 ```python
 
-transformer = Transformer(
-    d_model=512,
-    n_heads=16,
-    d_head=64,
-    enc_depth=6,
-    dec_depth=6,
-    n_classes=10)
+model = Vit(512, num_classes=10)
 
-src_seq = torch.randn(2, 10, 512)  # (b, timesteps_q, d_model)
-target_seq = torch.randn(2, 20, 512)  # (b, timesteps_q, d_model)
-
-out = transformer(src_seq, target_seq)
+img_batch = torch.randn(2, 3, 256, 256)
+out = model(img_batch)
 print(out.shape)
-
 
 
 ```
