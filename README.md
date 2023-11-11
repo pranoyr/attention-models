@@ -6,10 +6,10 @@ The purpose of this repository is not to give the best implementation , but to g
 
 
 ## Table of Contents
-  * [Attention is All you Need](#attention-is-all-you-need)
-  * [Multi Head Attention](#multi-head-attention)
-  * [Vision Transformer](#vision-transformer)
-  * [VQ-GAN](#vqgan) 
+  * [Attention is All you Need](#attention-is-all-you-need) (Transformer)
+  * [Multi Head Attention](#multi-head-attention) 
+  * [Vision Transformer](#vision-transformer) (Image Classification Transformer)
+  * [VQ-GAN](#vqgan)(Vector Quantised GAN)
   * [Parti](#parti) (Google's text to image)
 
 
