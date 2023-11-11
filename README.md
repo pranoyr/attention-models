@@ -18,7 +18,6 @@ The purpose of this repository is not to give the best implementation , but to g
 Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all you need</a>,
 
 ```python
-
 transformer = Transformer(
 	d_model=512,
 	n_heads=16,
@@ -64,7 +63,6 @@ print(output.shape) # (b, timesteps, dim)
 Implementation of <a href="https://arxiv.org/abs/2010.11929">Vision Transformer</a>,
 
 ```python
-
 model = Vit(512, num_classes=10)
 
 img_batch = torch.randn(2, 3, 256, 256)
@@ -80,7 +78,6 @@ print(out.shape) # (b, num_classes)
 Implementation of <a href="https://sites.research.google/parti/">Parti</a>,
 
 ```python
-
 imgs = torch.randn(2, 3, 256, 256).to(device)
 	texts = ["this is a test", "this is another test"]
 	
