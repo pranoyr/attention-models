@@ -5,26 +5,7 @@ import torch.nn as nn
 import math
 import torch.nn.functional as F
 
-# class PositionalEncoding(nn.Module):
-# 	def __init__(self, d_model, max_len = 80):
-# 		super().__init__()
-# 		self.d_model = d_model
-		
-# 		pe = torch.zeros(max_len, d_model)
-# 		for pos in range(max_len):
-# 			for i in range(0, d_model, 2):
-# 				# even indices
-# 				pe[pos, i] = math.sin(pos / (10000 ** ((2 * i)/d_model)))
-# 				# odd indices
-# 				pe[pos, i + 1] = math.cos(pos / (10000 ** ((2 * (i + 1))/d_model)))
-	
-# 		self.register_buffer('pe', pe)
- 
-	
-# 	def forward(self, x):
-# 		seq_len = x.size(1)
-# 		x = x + self.pe[:seq_len]
-# 		return x
+
 class AbsolutePositionalEmbedding(nn.Module):
 	def __init__(self, dim, max_len):
 		super().__init__()
