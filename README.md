@@ -47,7 +47,7 @@ model = Vit(512, num_classes=10)
 
 img_batch = torch.randn(2, 3, 256, 256)
 out = model(img_batch)
-print(out.shape)
+print(out.shape) # (b, num_classes)
 
 
 ```
