@@ -4,13 +4,13 @@ import torch
 import torch.nn.functional as F
 from torch import nn, einsum
 import torchvision.transforms as T
-from t5 import T5Encoder, get_encoded_dim
+from models.t5 import T5Encoder, get_encoded_dim
 from einops import rearrange, repeat, pack
 from typing import Callable, Optional, List
 
 from einops import rearrange, repeat
-from transformer import Decoder
-from vqgan import VQGAN
+from models.transformer import Decoder
+from models.vqgan import VQGAN
 
 def exists(val):
 	return val is not None
@@ -49,6 +49,7 @@ class Parti(nn.Module):
 		
 		#### Transformer Decoder ####
 		self.start_token = nn.Parameter(torch.randn(dim))
+		codebook_size = vq.codebook.codebook_size
 		self.token_emb = nn.Embedding(codebook_size, dim)
 		self.pos_enc =  nn.Parameter(torch.randn(1, dim))
 		self.vq = vq

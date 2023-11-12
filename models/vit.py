@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from einops import rearrange, reduce, repeat, pack
 from torch import einsum
-from transformer import Encoder
+from models.transformer import Encoder
 
 
 

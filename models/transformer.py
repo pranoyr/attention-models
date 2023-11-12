@@ -1,9 +1,9 @@
-from multihead_attention import MultiHeadAttention
+from models.multihead_attention import MultiHeadAttention
 import torch.nn as nn
 import torch
 import copy
 import torch.nn.functional as F
-from positional_encoding import PositionalEncoding
+from models.positional_encoding import PositionalEncoding
 
 
 

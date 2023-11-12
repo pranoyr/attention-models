@@ -19,7 +19,7 @@ Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all yo
 
 ```python
 import torch
-from transformer import Transformer
+from models import Transformer
 
 transformer = Transformer(
         d_model=512,
@@ -34,8 +34,6 @@ target_seq = torch.randn(2, 20, 512)  # (b, timesteps_tgt, d_model)
 
 out = transformer(src_seq, target_seq)
 print(out.shape)
-
-
 ```
 
 ## Multi Head Attention
@@ -44,7 +42,7 @@ Implementation of Multi-Head Attention
 
 ```python
 import torch
-from multihead_attention import MultiHeadAttention
+from models import MultiHeadAttention
 
 attention = MultiHeadAttention(dim=512, num_heads=16, dim_head=64)
 	
@@ -57,7 +55,7 @@ i, j = q.shape[1], k.shape[1]
 mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
 
 output = attention(q, k, v, causal_mask=mask)
-print(output.shape) # (b, timesteps, dim) 
+print(output.shape) # (b, timesteps, dim
 
 ```
 
@@ -70,15 +68,13 @@ Implementation of <a href="https://arxiv.org/abs/2010.11929">Vision Transformer<
 
 ```python
 import torch
-from vit import ViT
+from models import ViT
 
 model = ViT(512, num_classes=10)
 
 img_batch = torch.randn(2, 3, 256, 256)
 out = model(img_batch)
 print(out.shape) # (b, num_classes)
-
-
 ```
 
 
@@ -88,8 +84,9 @@ Implementation of <a href="https://sites.research.google/parti/">Parti</a>,
 
 ```python
 import torch
-from vqgan import VQGAN
-from parti import Parti
+from models import VQGAN, Parti
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 imgs = torch.randn(2, 3, 256, 256).to(device)
 texts = ["this is a test", "this is another test"]
@@ -126,7 +123,7 @@ Implementation of <a href="https://github.com/CompVis/taming-transformers">VQGAN
 
 ```python
 import torch
-from vqgan import VQGAN
+from models import VQGAN
 
 codebook_dim = 256
 codebook_size = 8192
@@ -141,8 +138,6 @@ img = torch.randn(2, 3, 256, 256)
 indices = vqgan.encode_imgs(img)
 imgs = vqgan.decode_indices(indices)
 print(imgs.shape)
-   
-
 ```
 
 
