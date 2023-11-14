@@ -195,7 +195,7 @@ class Transformer(nn.Module):
         # Decoder
         tgt = self.dec_input_proj(tgt)
         tgt = self.pos_enc(tgt)
-        x = self.decoder(dec_in=tgt, context=context, context_mask=context_mask, causal_mask=causal_mask)
+        dec_out = self.decoder(dec_in=tgt, context=context, context_mask=context_mask, causal_mask=causal_mask)
         
-        x = self.linear(x)
-        return x
+        output = self.linear(dec_out)
+        return output
