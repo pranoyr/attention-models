@@ -22,11 +22,14 @@ class TextEncoder(torch.nn.Module):
 	
 		self.t5_encoder = T5Encoder(t5_name)
 		text_embed_dim = get_encoded_dim(t5_name)
-		self.text_embed_proj = nn.Linear(text_embed_dim, dim, bias = False) 
+		self.text_embed_proj = nn.Linear(text_embed_dim, dim, bias = False)
+		self.layer_norm = nn.LayerNorm(dim)
 	
 	def forward(self, texts: List[str]):
 		context_mask, text_embeds = self.t5_encoder(texts)
 		text_embeds = self.text_embed_proj(text_embeds)
+		# add layer norm
+		text_embeds = self.layer_norm(text_embeds)
 		return context_mask, text_embeds
 		
 		
@@ -55,6 +58,7 @@ class Parti(nn.Module):
 		self.vq = vq
 		
 		self.transformer_decoder = Decoder(dim, n_heads, d_head, depth)
+		self.layer_norm = nn.LayerNorm(dim)
 		self.to_logits = nn.Linear(dim, codebook_size)
 		
 	def forward(
@@ -86,9 +90,12 @@ class Parti(nn.Module):
 		# causal mask for transformer decoder
 		i = j = img_token_embeds.shape[1]
 		causal_mask = torch.ones((i, j), dtype=torch.bool, device=device).triu(j - i + 1)
-		x = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask, causal_mask=causal_mask)
+		# add layer norm
+		img_token_embeds = self.layer_norm(img_token_embeds)
+		# transformer decoder
+		dec_out = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask, causal_mask=causal_mask)
 		# to logits
-		logits = self.to_logits(x)
+		logits = self.to_logits(dec_out)
 
 		# calculate loss
 		loss = F.cross_entropy(rearrange(logits, 'b n c -> b c n'), labels)
