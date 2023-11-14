@@ -149,6 +149,7 @@ class Encoder(nn.Module):
 class Transformer(nn.Module):
     def __init__(self,
                  d_model,
+                 vocab_size,
                  n_heads=8,
                  d_head=64,
                  enc_depth=6,
@@ -156,9 +157,12 @@ class Transformer(nn.Module):
                  n_classes=None):
         super().__init__()
         
-
+        self.enc_input_proj = nn.Embedding(vocab_size, d_model)
+        
         self.encoder = Encoder(dim=d_model, n_heads=n_heads,
                                d_head=d_head, depth=enc_depth)
+        
+        self.dec_input_proj = nn.Embedding(vocab_size, d_model)
         
         self.decoder = Decoder(dim=d_model, n_heads=n_heads,
                                d_head=d_head, depth=dec_depth)\
@@ -173,7 +177,7 @@ class Transformer(nn.Module):
         causal_mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
         
         # context mask | context mask is 2D mask with True values on all elements. 
-        b , t , d = x.shape
+        b , t = x.shape
         context_mask = torch.ones((b, t), dtype=torch.bool)
 
         return context_mask, causal_mask
@@ -184,27 +188,14 @@ class Transformer(nn.Module):
         context_mask , causal_mask = self.get_decoder_mask(x, tgt)
         
         # Encoder
+        x = self.enc_input_proj(x)
         x = self.pos_enc(x)    
         context = self.encoder(x, context_mask=context_mask)
+        
         # Decoder
+        tgt = self.dec_input_proj(tgt)
         tgt = self.pos_enc(tgt)
         x = self.decoder(dec_in=tgt, context=context, context_mask=context_mask, causal_mask=causal_mask)
         
         x = self.linear(x)
         return x
-
-
-if __name__ == '__main__':
-    transformer = Transformer(
-        d_model=512,
-        n_heads=16,
-        d_head=64,
-        enc_depth=6,
-        dec_depth=6,
-        n_classes=10)
-
-    src_seq = torch.randn(2, 10, 512)  # (b, timesteps_src, d_model)
-    target_seq = torch.randn(2, 20, 512)  # (b, timesteps_tgt, d_model)
-
-    out = transformer(src_seq, target_seq)
-    print(out.shape)
