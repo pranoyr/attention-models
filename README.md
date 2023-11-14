@@ -23,17 +23,18 @@ from models import Transformer
 
 transformer = Transformer(
         d_model=512,
+        vocab_size=1000,
         n_heads=16,
         d_head=64,
         enc_depth=6,
         dec_depth=6,
         n_classes=10)
-
-src_seq = torch.randn(2, 10, 512)  # (b, timesteps_src, d_model)
-target_seq = torch.randn(2, 20, 512)  # (b, timesteps_tgt, d_model)
-
-out = transformer(src_seq, target_seq)
-print(out.shape)
+    
+    src_seq = torch.arange(0, 10).unsqueeze(0).repeat(2, 1)  # (b, timesteps_src)
+    target_seq = torch.arange(0, 20).unsqueeze(0).repeat(2, 1)  # (b, timesteps_tgt)
+    
+    out = transformer(src_seq, target_seq)
+    print(out.shape)
 ```
 
 ## Multi Head Attention
