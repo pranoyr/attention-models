@@ -136,7 +136,6 @@ class Encoder(nn.Module):
         super().__init__()
 
         encoder_layer = EncoderLayer(dim, n_heads, d_head)
-
         self.layers = _get_clones(encoder_layer, depth)
     
     def forward(self, x, context_mask=None):
@@ -159,17 +158,15 @@ class Transformer(nn.Module):
         super().__init__()
            
         self.enc_input_proj = nn.Embedding(vocab_size, d_model)
+        self.dec_input_proj = nn.Embedding(vocab_size, d_model)
+        self.pos_enc = PositionalEncoding(d_model)
         
         self.encoder = Encoder(dim=d_model, n_heads=n_heads,
                                d_head=d_head, depth=enc_depth)
         
-        self.dec_input_proj = nn.Embedding(vocab_size, d_model)
-        
         self.decoder = Decoder(dim=d_model, n_heads=n_heads,
                                d_head=d_head, depth=dec_depth)\
         
-        self.pos_enc = PositionalEncoding(d_model)
-
         self.linear = nn.Linear(d_model, n_classes)
     
     def get_decoder_mask(self, src_seq, tgt_seq):
@@ -213,6 +210,7 @@ class Transformer(nn.Module):
 
    
     def forward(self, src_seq, tgt_seq):
+                
         # get masks
         context_mask , causal_mask = self.get_decoder_mask(src_seq, tgt_seq)
         
