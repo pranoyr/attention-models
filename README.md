@@ -38,10 +38,10 @@ vocab_size = 1000
 
 src_seq = torch.randint(1, vocab_size, (batch_size, src_timesteps)) 
 
-# end token should be last token in the sequence followed by padding
+# During Training -> end token should be last token in the sequence followed by padding
 tgt_seq = torch.randint(1, vocab_size, (batch_size, tgt_timesteps))
 
-# start token should be the first token in the sequence
+# During Training -> start token should be the first token in the sequence
 tgt_shifted = torch.randint(1, vocab_size, (batch_size, tgt_timesteps))
 
 # forward pass
