@@ -208,7 +208,7 @@ class Transformer(nn.Module):
 
             out_seq = torch.cat((out_seq, output), dim=1)
 
-        return dec_in
+        return out_seq
 
     def forward(self, src_seq, tgt_seq):
         # get masks
