@@ -182,6 +182,35 @@ class Transformer(nn.Module):
         context_mask = torch.ones((b, t), dtype=torch.bool)
 
         return context_mask, causal_mask
+    
+    def generate(self, src_seq):
+        
+        src_seq = self.enc_input_proj(src_seq)
+        src_seq = self.pos_enc(src_seq)
+    
+        # Encoder
+        context = self.encoder(src_seq)
+        
+        end_token = 2
+        b = src_seq.shape[0]
+        
+        # Auto-regressive decoding
+        out_seq = torch.ones((b, 1), dtype=torch.long, device=src_seq.device)
+        while True:
+            dec_in = self.dec_input_proj(out_seq)
+            dec_in = self.pos_enc(dec_in)
+            dec_out = self.decoder(dec_in=dec_in, context=context)
+            output = self.linear(dec_out)
+            
+            # sample the last token
+            output = torch.argmax(output, dim=-1)[:,-1]
+            if output[0] == end_token:
+                break
+            output = rearrange(output, 'b -> b 1')
+
+            out_seq = torch.cat((out_seq, output), dim=1)
+        
+        return dec_in
 
    
     def forward(self, src_seq, tgt_seq):
