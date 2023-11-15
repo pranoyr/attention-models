@@ -89,7 +89,6 @@ class DecoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, dec_inp, context, context_mask=None, causal_mask=None):
-
         # self attention
         attn_out = self.multihead_attention(q=dec_inp, k=dec_inp, v=dec_inp, causal_mask=causal_mask)
 
@@ -122,7 +121,6 @@ class Decoder(nn.Module):
         self.layers = _get_clones(decoder_layer, depth)
     
     def forward(self, dec_in, context, context_mask=None, causal_mask=None):
-
         # input to the decoder is the previous dec output
         for layer in self.layers:
             dec_out = layer(dec_in, context, context_mask=context_mask, causal_mask=causal_mask)
