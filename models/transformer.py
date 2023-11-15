@@ -183,8 +183,7 @@ class Transformer(nn.Module):
 
         return context_mask, causal_mask
     
-    def generate(self, src_seq):
-        
+    def generate(self, src_seq: torch.Tensor):
         src_seq = self.enc_input_proj(src_seq)
         src_seq = self.pos_enc(src_seq)
     
@@ -214,7 +213,6 @@ class Transformer(nn.Module):
 
    
     def forward(self, src_seq, tgt_seq):
-                
         # get masks
         context_mask , causal_mask = self.get_decoder_mask(src_seq, tgt_seq)
         
