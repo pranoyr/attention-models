@@ -20,6 +20,7 @@ Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all yo
 ```python
 import torch
 from models import Transformer
+from einops import rearrange
 
 transformer = Transformer(
         d_model=512,
@@ -28,13 +29,28 @@ transformer = Transformer(
         d_head=64,
         enc_depth=6,
         dec_depth=6,
-        n_classes=10)
+        n_classes=1000)
     
-    src_seq = torch.arange(0, 10).unsqueeze(0).repeat(2, 1)  # (b, timesteps_src)
-    target_seq = torch.arange(0, 20).unsqueeze(0).repeat(2, 1)  # (b, timesteps_tgt)
-    
-    out = transformer(src_seq, target_seq)
-    print(out.shape)
+src_timesteps = 10
+tgt_timesteps = 20
+batch_size = 2
+vocab_size = 1000
+
+src_seq = torch.randint(1, vocab_size, (batch_size, src_timesteps)) 
+
+# end token should be last token in the sequence followed by padding
+tgt_seq = torch.randint(1, vocab_size, (batch_size, tgt_timesteps))
+
+# start token should be  first token in the sequence
+tgt_shifted = torch.randint(1, vocab_size, (batch_size, tgt_timesteps))
+
+# forward pass
+out = transformer(src_seq, tgt_shifted)
+
+# compute loss
+out = rearrange(out, 'b t c -> b c t')
+loss = torch.nn.functional.cross_entropy(out, tgt_seq, ignore_index=0)
+loss.backward()
 ```
 
 ## Multi Head Attention

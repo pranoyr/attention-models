@@ -4,6 +4,7 @@ import torch
 import copy
 import torch.nn.functional as F
 from models.positional_encoding import PositionalEncoding
+from einops import rearrange, repeat, pack
 
 
 
@@ -156,7 +157,7 @@ class Transformer(nn.Module):
                  dec_depth=6,
                  n_classes=None):
         super().__init__()
-        
+           
         self.enc_input_proj = nn.Embedding(vocab_size, d_model)
         
         self.encoder = Encoder(dim=d_model, n_heads=n_heads,
@@ -171,31 +172,32 @@ class Transformer(nn.Module):
 
         self.linear = nn.Linear(d_model, n_classes)
     
-    def get_decoder_mask(self, x, tgt):
+    def get_decoder_mask(self, src_seq, tgt_seq):
         # causal mask | causal mask is a 2D triangular matrix with True values on the upper triangle.
-        i = j = tgt.shape[1]
+        i = j = tgt_seq.shape[1]
         causal_mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
         
         # context mask | context mask is 2D mask with True values on all elements. 
-        b , t = x.shape
+        b , t = src_seq.shape
         context_mask = torch.ones((b, t), dtype=torch.bool)
 
         return context_mask, causal_mask
 
-    def forward(self, x, tgt):
-        
+   
+    def forward(self, src_seq, tgt_seq):
+                
         # get masks
-        context_mask , causal_mask = self.get_decoder_mask(x, tgt)
+        context_mask , causal_mask = self.get_decoder_mask(src_seq, tgt_seq)
         
         # Encoder
-        x = self.enc_input_proj(x)
-        x = self.pos_enc(x)    
-        context = self.encoder(x, context_mask=context_mask)
+        src_seq = self.enc_input_proj(src_seq)
+        src_seq = self.pos_enc(src_seq)    
+        context = self.encoder(src_seq, context_mask=context_mask)
         
         # Decoder
-        tgt = self.dec_input_proj(tgt)
-        tgt = self.pos_enc(tgt)
-        dec_out = self.decoder(dec_in=tgt, context=context, context_mask=context_mask, causal_mask=causal_mask)
+        dec_in = self.dec_input_proj(tgt_seq)
+        dec_in = self.pos_enc(dec_in)
+        dec_out = self.decoder(dec_in=dec_in, context=context, context_mask=context_mask, causal_mask=causal_mask)
         
         output = self.linear(dec_out)
         return output
