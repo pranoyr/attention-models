@@ -176,7 +176,7 @@ class Transformer(nn.Module):
         i = j = tgt_seq.shape[1]
         causal_mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
 
-        # context mask -> 2D mask with True values for all PAD tokens.
+        # context mask -> 2D mask with False values for all PAD tokens.
         b, t = src_seq.shape
         context_mask = torch.ones((b, t), dtype=torch.bool)
 
