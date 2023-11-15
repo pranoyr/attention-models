@@ -172,11 +172,11 @@ class Transformer(nn.Module):
         self.linear = nn.Linear(d_model, n_classes)
 
     def get_decoder_mask(self, src_seq, tgt_seq):
-        # causal mask | causal mask is a 2D triangular matrix with True values on the upper triangle.
+        # causal mask -> 2D triangular matrix with True values on the upper triangle.
         i = j = tgt_seq.shape[1]
         causal_mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
 
-        # context mask | context mask is 2D mask with True values on all elements.
+        # context mask -> 2D mask with True values for all PAD tokens.
         b, t = src_seq.shape
         context_mask = torch.ones((b, t), dtype=torch.bool)
 
