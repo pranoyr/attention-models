@@ -10,7 +10,7 @@ The purpose of this repository is not to give the best implementation , but to g
   * [Vision Transformer](#vision-transformer) (Image Classification Transformer)
   * [Vector Quantised GAN](#vqgan) (VQGAN)
   * [Parti](#parti) (Google's text to image)
-  * [MaskGIT](#MaskGIT) (Masked Generative Image Transforme)
+  * [MaskGIT](#MaskGIT) (Masked Generative Image Transformer)
   
 
 
