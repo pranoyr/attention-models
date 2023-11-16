@@ -181,7 +181,7 @@ transformer = MaskGitTransformer(
         enc_depth=6,
         dec_depth=6)
     
-# Consider this as quantized image tokens given as input
+# quantized image tokens given as input
 x = torch.randint(0, vocab_size, (batch_size, timesteps))
 tgt = torch.randint(0, vocab_size, (batch_size, timesteps))
 
