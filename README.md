@@ -168,22 +168,27 @@ from torch import nn
 import torch
 from models import MaskGitTransformer
 from einops import rearrange
+from models.vqgan import VQGAN
 
-timesteps = 256
-batch_size = 2
-vocab_size = 8192
+# VQGAN
+codebook_dim = 256
+codebook_size = 8192
+vqgan = VQGAN(codebook_dim, codebook_size)
 
+# MaskGitTransformer
 transformer = MaskGitTransformer(
         dim=512,
-        vocab_size=8192,
+        vocab_size=codebook_size,
         n_heads=16,
         d_head=64,
         enc_depth=6,
         dec_depth=6)
     
-# quantized image tokens given as input
-x = torch.randint(0, vocab_size, (batch_size, timesteps))
-tgt = torch.randint(0, vocab_size, (batch_size, timesteps))
+img = torch.randn(2, 3, 256, 256)
+indices = vqgan.encode_imgs(img)
+
+# prepare input and target
+x , tgt = indices[:,:-1] , indices[:,1:]
 
 # forward pass
 out = transformer(x)
