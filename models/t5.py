@@ -53,9 +53,10 @@ def get_encoded_dim(name):
 # encoding text
 
 class T5Encoder(torch.nn.Module):
-	def __init__(self, name = DEFAULT_T5_NAME):
+	def __init__(self, name = DEFAULT_T5_NAME, max_length = MAX_LENGTH):
 		super().__init__()
 		self.name = name
+		self.max_length = max_length
 	   
 		self.t5, self.tokenizer = get_model_and_tokenizer(name)
 		self.t5.eval()
@@ -69,7 +70,7 @@ class T5Encoder(torch.nn.Module):
 			texts,
 			return_tensors = "pt",
 			padding = 'max_length',
-			max_length = MAX_LENGTH,
+			max_length = self.max_length,
 			truncation = True
 		)
 

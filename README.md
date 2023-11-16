@@ -214,9 +214,25 @@ vq = VQGAN(codebook_dim, codebook_size)
 
 
 # MUSE 
+from torch import nn
+import torch
+from einops import rearrange
+from models.vqgan import VQGAN
+from models import MUSE
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# VQGAN
+codebook_dim = 256
+codebook_size = 8192
+vq = VQGAN(codebook_dim, codebook_size)
+
+
+# MUSE 
 dim = 512
 encoder_params = dict(
-	t5_name = "google/t5-v1_1-base"
+        t5_name = "google/t5-v1_1-base",
+        max_length = 77
 )
  
 decoder_params = dict(
@@ -233,7 +249,6 @@ texts = ["this is a test", "this is another test"]
 # forward pass
 loss = muse(texts, imgs)
 loss.backward()
-
 ```
 
 ## Acknowledgement

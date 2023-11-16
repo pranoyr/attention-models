@@ -16,10 +16,10 @@ def cosine_schedule(t):
 
 
 class TextEncoder(torch.nn.Module):
-	def __init__(self, dim, t5_name):
+	def __init__(self, dim, t5_name, max_length):
 		super().__init__()
 
-		self.t5_encoder = T5Encoder(t5_name)
+		self.t5_encoder = T5Encoder(t5_name, max_length)
 		text_embed_dim = get_encoded_dim(t5_name)
 		self.text_embed_proj = nn.Linear(text_embed_dim, dim, bias=False)
 		self.layer_norm = nn.LayerNorm(dim)
@@ -38,6 +38,7 @@ class MUSE(nn.Module):
 		dim,
 		vq,
 		t5_name,
+		max_length,
 		n_heads,
 		d_head,
 		depth,
@@ -45,7 +46,7 @@ class MUSE(nn.Module):
 		super().__init__()
 
 		#### Text Encoder  ####
-		self.text_encoder = TextEncoder(dim, t5_name)
+		self.text_encoder = TextEncoder(dim, t5_name, max_length)
 
 		#### Transformer Decoder ####
 		self.vq = vq
