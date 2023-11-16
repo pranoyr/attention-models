@@ -11,6 +11,7 @@ The purpose of this repository is not to give the best implementation , but to g
   * [Vector Quantised GAN](#vqgan) (VQGAN)
   * [Parti](#parti) (Google's text to image)
   * [MaskGIT](#MaskGIT) (Masked Generative Image Transformer)
+  * [Muse](#Muse) (Text-To-Image Generation via Masked Generative Transformers)
   
 
 
