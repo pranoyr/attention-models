@@ -181,10 +181,8 @@ transformer = MaskGitTransformer(
         enc_depth=6,
         dec_depth=6)
     
-# last token is removed
+# Consider this as quantized image tokens given as input
 x = torch.randint(0, vocab_size, (batch_size, timesteps))
-
-# first token is removed
 tgt = torch.randint(0, vocab_size, (batch_size, timesteps))
 
 # forward pass
