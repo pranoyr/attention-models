@@ -24,7 +24,7 @@ from models import Transformer
 from einops import rearrange
 
 transformer = Transformer(
-        d_model=512,
+        dim=512,
         vocab_size=1000,
         n_heads=16,
         d_head=64,

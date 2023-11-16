@@ -148,7 +148,7 @@ class Encoder(nn.Module):
 class Transformer(nn.Module):
     def __init__(
         self,
-        d_model,
+        dim,
         vocab_size,
         n_heads=8,
         d_head=64,
@@ -158,18 +158,18 @@ class Transformer(nn.Module):
     ):
         super().__init__()
 
-        self.enc_input_proj = nn.Embedding(vocab_size, d_model)
-        self.dec_input_proj = nn.Embedding(vocab_size, d_model)
-        self.pos_enc = PositionalEncoding(d_model)
+        self.enc_input_proj = nn.Embedding(vocab_size, dim)
+        self.dec_input_proj = nn.Embedding(vocab_size, dim)
+        self.pos_enc = PositionalEncoding(dim)
 
         self.encoder = Encoder(
-            dim=d_model, n_heads=n_heads, d_head=d_head, depth=enc_depth
+            dim=dim, n_heads=n_heads, d_head=d_head, depth=enc_depth
         )
 
         self.decoder = Decoder(
-            dim=d_model, n_heads=n_heads, d_head=d_head, depth=dec_depth
+            dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth
         )
-        self.linear = nn.Linear(d_model, n_classes)
+        self.linear = nn.Linear(dim, n_classes)
 
     def get_decoder_mask(self, src_seq, tgt_seq):
         # causal mask -> 2D triangular matrix with True values on the upper triangle.
