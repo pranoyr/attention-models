@@ -4,7 +4,6 @@ The purpose of this repository is not to give the best implementation , but to g
 
 
 
-
 ## Table of Contents
   * [Attention is All you Need](#attention-is-all-you-need) (Transformer)
   * [Multi Head Attention](#multi-head-attention) 
