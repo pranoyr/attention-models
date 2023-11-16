@@ -106,9 +106,6 @@ import torch
 from models import VQGAN, Parti
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-imgs = torch.randn(2, 3, 256, 256).to(device)
-texts = ["this is a test", "this is another test"]
 	
 # Vector Quantizer 
 codebook_dim = 256
@@ -128,6 +125,10 @@ decoder_params = dict(
 	depth=6)
  
 model = Parti(dim, vq, **encoder_params, **decoder_params).to(device)
+
+imgs = torch.randn(2, 3, 256, 256).to(device)
+texts = ["this is a test", "this is another test"]
+
 loss = model(texts, imgs)
 loss.backward()
  
