@@ -72,7 +72,7 @@ class MUSE(nn.Module):
 
 		# ignore the tokens that are not masked while computing loss
         tgt = x.masked_fill(~mask, -1)
-         # fill x with mask_id where mask is True
+        # fill x with mask_id where mask is True
         x = x.masked_fill(mask, self.mask_token_id)
         return x, tgt
 
