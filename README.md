@@ -118,13 +118,14 @@ vq = VQGAN(codebook_dim, codebook_size)
 # Parti 
 dim = 512
 encoder_params = dict(
-	t5_name = "google/t5-v1_1-base"
+	t5_name = "google/t5-v1_1-base",
+	max_length = 77
 )
  
 decoder_params = dict(
-	n_heads = 8,
-	d_head	= 64,
-	depth= 6)
+	n_heads=8,
+	d_head=64,
+	depth=6)
  
 model = Parti(dim, vq, **encoder_params, **decoder_params).to(device)
 loss = model(texts, imgs)
@@ -136,6 +137,8 @@ with torch.no_grad():
 	imgs = model.generate(texts)
 print(imgs.shape)
 ```
+
+
 ## VQGAN
 
 Implementation of <a href="https://github.com/CompVis/taming-transformers">VQGAN</a>,
