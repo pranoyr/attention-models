@@ -236,9 +236,9 @@ encoder_params = dict(
 )
  
 decoder_params = dict(
-	n_heads = 8,
-	d_head = 64,
-	depth = 6)
+	n_heads=8,
+	d_head=64,
+	depth=6)
  
 muse = MUSE(dim, vq, **encoder_params, **decoder_params).to(device)
     
