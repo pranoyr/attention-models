@@ -11,6 +11,8 @@ The purpose of this repository is not to give the best implementation , but to g
   * [Vision Transformer](#vision-transformer) (Image Classification Transformer)
   * [Vector Quantised GAN](#vqgan) (VQGAN)
   * [Parti](#parti) (Google's text to image)
+  * [MaskGIT](#MaskGIT) (Masked Generative Image Transforme)
+  
 
 
 ## Attention is All you Need
@@ -156,6 +158,45 @@ indices = vqgan.encode_imgs(img)
 imgs = vqgan.decode_indices(indices)
 print(imgs.shape)
 ```
+
+
+## MaskGIT
+
+Implementation of <a href="https://arxiv.org/pdf/2202.04200.pdf">MaskGIT</a>,
+
+```python
+from torch import nn
+import torch
+from models import MaskGitTransformer
+from einops import rearrange
+
+timesteps = 256
+batch_size = 2
+vocab_size = 8192
+
+transformer = MaskGitTransformer(
+        dim=512,
+        vocab_size=8192,
+        n_heads=16,
+        d_head=64,
+        enc_depth=6,
+        dec_depth=6)
+    
+# last token is removed
+x = torch.randint(0, vocab_size, (batch_size, timesteps))
+
+# first token is removed
+tgt = torch.randint(0, vocab_size, (batch_size, timesteps))
+
+# forward pass
+out = transformer(x)
+
+# compute loss
+out = rearrange(out, 'b t c -> b c t')
+loss = torch.nn.functional.cross_entropy(out, tgt, ignore_index=-1)
+loss.backward()
+```
+
 
 
 ## Acknowledgement
