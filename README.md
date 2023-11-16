@@ -193,6 +193,49 @@ loss.backward()
 ```
 
 
+## MUSE
+
+Implementation of <a href="https://arxiv.org/pdf/2301.00704.pdf">MUSE</a>,
+
+```python
+from torch import nn
+import torch
+from einops import rearrange
+from models.vqgan import VQGAN
+from models import MUSE
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# VQGAN
+codebook_dim = 256
+codebook_size = 8192
+vq = VQGAN(codebook_dim, codebook_size)
+
+
+# MUSE 
+dim = 512
+encoder_params = dict(
+	t5_name = "google/t5-v1_1-base"
+)
+ 
+decoder_params = dict(
+	n_heads = 8,
+	d_head	= 64,
+	depth= 6)
+ 
+
+# MaskGitTransformer
+muse = MUSE(dim, vq, **encoder_params, **decoder_params).to(device)
+    
+
+imgs = torch.randn(2, 3, 256, 256).to(device)
+texts = ["this is a test", "this is another test"]
+
+# forward pass
+loss = muse(texts, imgs)
+loss.backward()
+
+```
 
 ## Acknowledgement
 - A Big Thanks to <a href="https://github.com/lucidrains">Lucidrians</a> for his open contributions. Your repos are always a reference book for me
