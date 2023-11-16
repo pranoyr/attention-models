@@ -185,17 +185,10 @@ transformer = MaskGitTransformer(
         dec_depth=6)
     
 img = torch.randn(2, 3, 256, 256)
-indices = vqgan.encode_imgs(img)
-
-# prepare input and target
-x , tgt = indices[:,:-1] , indices[:,1:]
+x = vqgan.encode_imgs(img)
 
 # forward pass
-out = transformer(x)
-
-# compute loss
-out = rearrange(out, 'b t c -> b c t')
-loss = torch.nn.functional.cross_entropy(out, tgt, ignore_index=-1)
+loss = transformer(x)
 loss.backward()
 ```
 

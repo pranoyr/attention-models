@@ -89,16 +89,20 @@ class MaskGitTransformer(nn.Module):
         randm_perm = torch.rand(x.shape).argsort(dim = -1)
         mask = randm_perm < num_tokens_masked
         
-        # fill x with mask_id
-        x = x.masked_fill(mask, self.mask_token_id)       
-        return x 
+        # fill x with mask_id, ignore the tokens that are not masked while computing loss
+        tgt = x.masked_fill(~mask, -1)
+        x = x.masked_fill(mask, self.mask_token_id)    
+        return x, tgt
 
     def forward(self, x):
-        x = self.fill_mask(x)
+        x, tgt = self.fill_mask(x)
         x = self.input_proj(x)
         x += self.pos_enc
         
         dec_out = self.decoder(x)
-
         output = self.linear(dec_out)
-        return output
+        
+        # compute loss
+        output = rearrange(output, 'b t c -> b c t')
+        loss = torch.nn.functional.cross_entropy(output, tgt, ignore_index=-1)
+        return loss
