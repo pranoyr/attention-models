@@ -224,8 +224,6 @@ decoder_params = dict(
 	d_head	= 64,
 	depth= 6)
  
-
-# MaskGitTransformer
 muse = MUSE(dim, vq, **encoder_params, **decoder_params).to(device)
     
 
