@@ -52,7 +52,7 @@ class MUSE(nn.Module):
         codebook_size = vq.codebook.codebook_size
         self.mask_token_id = codebook_size
         self.token_emb = nn.Embedding(codebook_size + 1, dim)
-        self.pos_enc =  nn.Parameter(torch.randn(1, dim))
+        self.pos_enc = nn.Parameter(torch.randn(1, dim))
         self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=depth)
         self.linear = nn.Linear(dim, codebook_size)
 
@@ -77,15 +77,15 @@ class MUSE(nn.Module):
 
     def forward(self, texts, imgs):
         # text encoder
-        context_mask, text_embeds = self.text_encoder(texts)  # (batch_size, seq_len, dim)
+        context_mask, text_embeds = self.text_encoder(texts)
 
         # quantize images
         img_token_indices = self.vq.encode_imgs(imgs)
 
         # apply cosine schedule to img tokens
         img_token_indices, tgt = self.fill_mask(img_token_indices)
-        
-		# add positional encoding
+
+        # add positional encoding
         img_token_embeds = self.token_emb(img_token_indices)
         img_token_embeds += self.pos_enc
 
