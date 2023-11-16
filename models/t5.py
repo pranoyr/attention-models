@@ -48,7 +48,7 @@ def get_encoded_dim(name):
 		config = T5_CONFIGS[name]["model"].config
 	else:
 		assert False
-	return config.dim
+	return config.d_model
 
 # encoding text
 
