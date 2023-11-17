@@ -37,7 +37,6 @@ class FeedForward(nn.Module):
 
         inner_dim = int(dim * mult * 2 / 3)
         self.ff = nn.Sequential(
-            LayerNorm(dim),
             nn.Linear(dim, inner_dim * 2, bias=False),
             GEGLU(),
             LayerNorm(inner_dim),
@@ -47,89 +46,7 @@ class FeedForward(nn.Module):
     def forward(self, x):
         return self.ff(x)
 
-
-class EncoderLayer(nn.Module):
-    def __init__(self, dim, n_heads, d_head, dropout=0.2):
-        super().__init__()
-
-        self.multihead_attention = MultiHeadAttention(dim, n_heads, d_head)
-        self.feed_forward = FeedForward(dim)
-        self.norm = nn.LayerNorm(dim)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x, context_mask=None):
-        # self attention
-        attn_out = self.multihead_attention(q=x, k=x, v=x, context_mask=context_mask)
-
-        # ADD & NORM
-        x = attn_out + x
-        x = self.dropout(self.norm(x))
-
-        # feed forward
-        fc_out = self.feed_forward(x)
-
-        # ADD & NORM
-        x = fc_out + x
-        x = self.dropout(self.norm(x))
-
-        return x
-
-
-class DecoderLayer(nn.Module):
-    def __init__(self, dim, n_heads, d_head, dropout=0.2):
-        super().__init__()
-
-        self.multihead_attention = MultiHeadAttention(dim, n_heads, d_head)
-        self.feed_forward = FeedForward(dim)
-        self.norm = nn.LayerNorm(dim)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, dec_inp, context, context_mask=None, causal_mask=None):
-        # self attention
-        attn_out = self.multihead_attention(
-            q=dec_inp, k=dec_inp, v=dec_inp, causal_mask=causal_mask
-        )
-
-        # ADD & NORM
-        dec_inp = attn_out + dec_inp
-        dec_inp = self.dropout(self.norm(dec_inp))
-
-        # cross attention
-        attn_out = self.multihead_attention(
-            q=dec_inp, k=context, v=context, context_mask=context_mask
-        )
-
-        # ADD & NORM
-        dec_inp = attn_out + dec_inp
-        dec_inp = self.dropout(self.norm(dec_inp))
-
-        # feed forward
-        fc_out = self.feed_forward(dec_inp)
-
-        # ADD & NORM
-        dec_inp = fc_out + dec_inp
-        dec_out = self.dropout(self.norm(dec_inp))  # e.g.: 32x10x512
-
-        return dec_out
-
-
-class Decoder(nn.Module):
-    def __init__(self, dim, n_heads, d_head, depth):
-        super().__init__()
-
-        decoder_layer = DecoderLayer(dim, n_heads, d_head)
-        self.layers = _get_clones(decoder_layer, depth)
-
-    def forward(self, dec_in, context, context_mask=None, causal_mask=None):
-        # input to the decoder is the previous dec output
-        for layer in self.layers:
-            dec_out = layer(
-                dec_in, context, context_mask=context_mask, causal_mask=causal_mask
-            )
-            dec_in = dec_out
-
-        return dec_out
-
+# Both Encoder and Decoder use Pre LayerNorm
 
 class Encoder(nn.Module):
     def __init__(self, dim, n_heads, d_head, depth):
@@ -141,8 +58,96 @@ class Encoder(nn.Module):
     def forward(self, x, context_mask=None):
         for layer in self.layers:
             x = layer(x, context_mask=context_mask)
-
         return x
+
+
+class EncoderLayer(nn.Module):
+    def __init__(self, dim, n_heads, d_head, dropout=0.2):
+        super().__init__()
+
+        self.multihead_attention = MultiHeadAttention(dim, n_heads, d_head)
+        self.feed_forward = FeedForward(dim)
+        self.norm1 = nn.LayerNorm(dim)
+        self.norm2 = nn.LayerNorm(dim)
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x, context_mask=None):
+        x_norm = self.norm1(x)
+        # self attention
+        attn_out = self.multihead_attention(q=x_norm, k=x_norm, v=x_norm, context_mask=context_mask)
+
+        # ADD & NORM
+        x = attn_out + x
+        x_norm = self.norm2(x)
+
+        # feed forward
+        fc_out = self.feed_forward(x_norm)
+
+        # ADD
+        x = fc_out + x
+        return x
+
+
+
+class Decoder(nn.Module):
+    def __init__(self, dim, n_heads, d_head, depth):
+        super().__init__()
+
+        decoder_layer = DecoderLayer(dim, n_heads, d_head)
+        self.layers = _get_clones(decoder_layer, depth)
+      
+    def forward(self, dec_in, context, context_mask=None, causal_mask=None):
+        # input to the decoder is the previous dec output
+        for layer in self.layers:
+            dec_out = layer(
+                dec_in, context, context_mask=context_mask, causal_mask=causal_mask
+            )
+            dec_in = dec_out
+            
+        return dec_out
+    
+    
+class DecoderLayer(nn.Module):
+    def __init__(self, dim, n_heads, d_head, dropout=0.2):
+        super().__init__()
+
+        self.multihead_attention = MultiHeadAttention(dim, n_heads, d_head)
+        self.feed_forward = FeedForward(dim)
+        self.norm1 = nn.LayerNorm(dim)
+        self.norm2 = nn.LayerNorm(dim)
+        self.norm3 = nn.LayerNorm(dim)
+        self.context_norm = nn.LayerNorm(dim)
+        self.dropout = nn.Dropout(dropout)
+        
+    
+    def forward(self, dec_inp, context, context_mask=None, causal_mask=None):
+        dec_inp_norm = self.norm1(dec_inp)
+        # self attention
+        attn_out = self.multihead_attention(
+            q=dec_inp_norm, k=dec_inp_norm, v=dec_inp_norm, causal_mask=causal_mask
+        )
+
+        # ADD & NORM
+        dec_inp = attn_out + dec_inp
+        dec_inp_norm = self.norm2(dec_inp)
+
+        # cross attention
+        context_norm = self.context_norm(context)
+        attn_out = self.multihead_attention(
+            q=dec_inp_norm, k=context_norm, v=context_norm, context_mask=context_mask
+        )
+
+        # ADD & NORM
+        dec_inp = attn_out + dec_inp
+        dec_inp_norm = self.norm3(dec_inp)
+
+        # feed forward
+        fc_out = self.feed_forward(dec_inp_norm)
+
+        # ADD
+        dec_out = fc_out + dec_inp
+        return dec_out
+
 
 
 class Transformer(nn.Module):

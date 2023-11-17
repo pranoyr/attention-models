@@ -27,8 +27,6 @@ class TextEncoder(torch.nn.Module):
 	def forward(self, texts: List[str]):
 		context_mask, text_embeds = self.t5_encoder(texts)
 		text_embeds = self.text_embed_proj(text_embeds)
-		# add layer norm
-		text_embeds = self.layer_norm(text_embeds)
 		return context_mask, text_embeds
 
 
@@ -54,7 +52,8 @@ class MUSE(nn.Module):
 		self.mask_token_id = codebook_size
 		self.token_emb = nn.Embedding(codebook_size + 1, dim)
 		self.pos_enc = nn.Parameter(torch.randn(1, 1, dim))
-		self.layer_norm = nn.LayerNorm(dim)
+		self.init_norm = nn.LayerNorm(dim)
+		self.final_norm = nn.LayerNorm(dim)
 		self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=depth)
 		self.linear = nn.Linear(dim, codebook_size)
 
@@ -93,10 +92,11 @@ class MUSE(nn.Module):
 		img_token_embeds += self.pos_enc
 
 		# bidirectional decoder
-		img_token_embeds = self.layer_norm(img_token_embeds)
+		img_token_embeds = self.init_norm(img_token_embeds)
 		dec_out = self.decoder(
 			dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask
 		)
+		dec_out = self.final_norm(dec_out)
 		output = self.linear(dec_out)
 
 		# compute loss
