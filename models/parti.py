@@ -75,9 +75,8 @@ class Parti(nn.Module):
   
 		# convert images to indices
 		img_token_indices = self.vq.encode_imgs(imgs)
-		labels = img_token_indices.clone()
-		# remove the last token
-		img_token_indices = img_token_indices[:, :-1]
+		# remove the last token for decoder input
+		img_token_indices , labels = img_token_indices[:, :-1], img_token_indices
 		#  convert indices to embeddings
 		img_token_embeds = self.token_emb(img_token_indices) # (batch_size, seq_len, dim)
 		# add positional encoding
@@ -119,7 +118,9 @@ class Parti(nn.Module):
 			# add start token
 			img_token_embeds = torch.cat((start_token, img_token_embeds), dim=1)
 			# decoder
+			self.init_norm(img_token_embeds)
 			dec_out = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask)
+			self.final_norm(dec_out)
 			# to logits
 			logits = self.to_logits(dec_out)
    
