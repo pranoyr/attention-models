@@ -54,6 +54,7 @@ class MUSE(nn.Module):
 		self.mask_token_id = codebook_size
 		self.token_emb = nn.Embedding(codebook_size + 1, dim)
 		self.pos_enc = nn.Parameter(torch.randn(1, 1, dim))
+		self.layer_norm = nn.LayerNorm(dim)
 		self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=depth)
 		self.linear = nn.Linear(dim, codebook_size)
 
@@ -92,6 +93,7 @@ class MUSE(nn.Module):
 		img_token_embeds += self.pos_enc
 
 		# bidirectional decoder
+		img_token_embeds = self.layer_norm(img_token_embeds)
 		dec_out = self.decoder(
 			dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask
 		)
