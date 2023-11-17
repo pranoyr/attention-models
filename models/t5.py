@@ -20,7 +20,6 @@ def get_tokenizer(name):
 	return tokenizer
 
 def get_model(name):
-	print(name)
 	model = T5EncoderModel.from_pretrained(name)
 	return model
 
@@ -63,8 +62,7 @@ class T5Encoder(torch.nn.Module):
 	
 	def forward(self, texts: List[str], device = None):
 	 
-		if torch.cuda.is_available():
-		    device = "cuda"
+		device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 		encoded = self.tokenizer.batch_encode_plus(
 			texts,
@@ -83,9 +81,6 @@ class T5Encoder(torch.nn.Module):
 			encoded_text = output.last_hidden_state.detach()
 
 		attn_mask = attn_mask.bool()
-
-		# if not exists(device):
-		# 	return encoded_text, attn_mask
 
 		encoded_text.to(device)
 		attn_mask.to(device)
