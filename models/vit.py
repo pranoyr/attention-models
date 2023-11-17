@@ -38,7 +38,7 @@ class ViT(nn.Module):
         x, _ = pack([class_token, x], "b * d")
 
         # add positional encoding
-        x = x + self.pos_enc
+        x += self.pos_enc
 
         # transformer encoder
         x = self.encoder(x)
