@@ -46,7 +46,9 @@ class FeedForward(nn.Module):
     def forward(self, x):
         return self.ff(x)
 
+
 # Both Encoder and Decoder use Pre LayerNorm
+
 
 class Encoder(nn.Module):
     def __init__(self, dim, n_heads, d_head, depth):
@@ -74,7 +76,9 @@ class EncoderLayer(nn.Module):
     def forward(self, x, context_mask=None):
         x_norm = self.norm1(x)
         # self attention
-        attn_out = self.multihead_attention(q=x_norm, k=x_norm, v=x_norm, context_mask=context_mask)
+        attn_out = self.multihead_attention(
+            q=x_norm, k=x_norm, v=x_norm, context_mask=context_mask
+        )
 
         # ADD & NORM
         x = attn_out + x
@@ -88,14 +92,13 @@ class EncoderLayer(nn.Module):
         return x
 
 
-
 class Decoder(nn.Module):
     def __init__(self, dim, n_heads, d_head, depth):
         super().__init__()
 
         decoder_layer = DecoderLayer(dim, n_heads, d_head)
         self.layers = _get_clones(decoder_layer, depth)
-      
+
     def forward(self, dec_in, context, context_mask=None, causal_mask=None):
         # input to the decoder is the previous dec output
         for layer in self.layers:
@@ -103,10 +106,10 @@ class Decoder(nn.Module):
                 dec_in, context, context_mask=context_mask, causal_mask=causal_mask
             )
             dec_in = dec_out
-            
+
         return dec_out
-    
-    
+
+
 class DecoderLayer(nn.Module):
     def __init__(self, dim, n_heads, d_head, dropout=0.2):
         super().__init__()
@@ -118,8 +121,7 @@ class DecoderLayer(nn.Module):
         self.norm3 = nn.LayerNorm(dim)
         self.context_norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
-        
-    
+
     def forward(self, dec_inp, context, context_mask=None, causal_mask=None):
         dec_inp_norm = self.norm1(dec_inp)
         # self attention
@@ -132,9 +134,8 @@ class DecoderLayer(nn.Module):
         dec_inp_norm = self.norm2(dec_inp)
 
         # cross attention
-        context_norm = self.context_norm(context)
         attn_out = self.multihead_attention(
-            q=dec_inp_norm, k=context_norm, v=context_norm, context_mask=context_mask
+            q=dec_inp_norm, k=context, v=context, context_mask=context_mask
         )
 
         # ADD & NORM
@@ -147,7 +148,6 @@ class DecoderLayer(nn.Module):
         # ADD
         dec_out = fc_out + dec_inp
         return dec_out
-
 
 
 class Transformer(nn.Module):
@@ -167,13 +167,9 @@ class Transformer(nn.Module):
         self.dec_input_proj = nn.Embedding(vocab_size, dim)
         self.pos_enc = PositionalEncoding(dim)
 
-        self.encoder = Encoder(
-            dim=dim, n_heads=n_heads, d_head=d_head, depth=enc_depth
-        )
+        self.encoder = Encoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=enc_depth)
 
-        self.decoder = Decoder(
-            dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth
-        )
+        self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth)
         self.linear = nn.Linear(dim, n_classes)
 
     def get_decoder_mask(self, src_seq, tgt_seq):
