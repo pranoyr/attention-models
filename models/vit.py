@@ -19,8 +19,8 @@ class ViT(nn.Module):
         self.fc1 = nn.Linear(self.patch_dim, dim)
         self.final_fc = nn.Linear(dim, num_classes)
 
-        self.class_token = nn.Parameter(torch.randn(1, dim))
-        self.pos_enc =  nn.Parameter(torch.randn(1, dim))
+        self.class_token = nn.Parameter(torch.randn(dim))
+        self.pos_enc =  nn.Parameter(torch.randn(1, 1, dim))
 
         self.encoder = Encoder(dim, n_heads, d_head, depth)
         
@@ -34,7 +34,7 @@ class ViT(nn.Module):
         x = nn.LayerNorm(self.dim)(x)
 
         # add class token
-        class_token = repeat(self.class_token, 't d -> b t d', b=x.shape[0])
+        class_token = repeat(self.class_token, 'd -> b 1 d', b=x.shape[0])
         x, _ = pack([class_token, x], "b * d")
 
         # add positional encoding

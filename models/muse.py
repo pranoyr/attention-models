@@ -53,7 +53,7 @@ class MUSE(nn.Module):
 		codebook_size = vq.codebook.codebook_size
 		self.mask_token_id = codebook_size
 		self.token_emb = nn.Embedding(codebook_size + 1, dim)
-		self.pos_enc = nn.Parameter(torch.randn(1, dim))
+		self.pos_enc = nn.Parameter(torch.randn(1, 1, dim))
 		self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=depth)
 		self.linear = nn.Linear(dim, codebook_size)
 
