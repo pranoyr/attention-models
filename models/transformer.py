@@ -163,13 +163,16 @@ class Transformer(nn.Module):
     ):
         super().__init__()
 
+        # Encoder
         self.enc_input_proj = nn.Embedding(vocab_size, dim)
         self.dec_input_proj = nn.Embedding(vocab_size, dim)
         self.pos_enc = PositionalEncoding(dim)
-
+        self.encoder_norm = LayerNorm(dim)
         self.encoder = Encoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=enc_depth)
-
+        
+        # Decoder
         self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth)
+        self.decoder_norm = LayerNorm(dim)
         self.linear = nn.Linear(dim, n_classes)
 
     def get_decoder_mask(self, src_seq, tgt_seq):
@@ -218,11 +221,15 @@ class Transformer(nn.Module):
         # Encoder
         src_seq = self.enc_input_proj(src_seq)
         src_seq = self.pos_enc(src_seq)
+        # added layer norm for better stability
+        src_seq = self.encoder_norm(src_seq)
         context = self.encoder(src_seq, context_mask=context_mask)
 
         # Decoder
         dec_in = self.dec_input_proj(tgt_seq)
         dec_in = self.pos_enc(dec_in)
+        # added layer norm for better stability
+        dec_in = self.decoder_norm(dec_in)
         dec_out = self.decoder(
             dec_in=dec_in,
             context=context,
