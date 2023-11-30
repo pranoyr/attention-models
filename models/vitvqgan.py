@@ -82,9 +82,10 @@ class ViTVQGAN(nn.Module):
         return indices
 
 
+
 if __name__ == '__main__':
 
-    codebook_dim = 32
+    codebook_dim = 256
     codebook_size = 8192
 
     vqgan = VQGAN(codebook_dim, codebook_size)
@@ -93,8 +94,8 @@ if __name__ == '__main__':
     out, loss = vqgan(img)
     print(loss)
 
-    img = torch.randn(1, 3, 256, 256)
+    img = torch.randn(2, 3, 256, 256)
     indices = vqgan.encode_imgs(img)
-    img = vqgan.decode_indices(indices)
-    print(img.shape)
-
+    imgs = vqgan.decode_indices(indices)
+    print(imgs.shape)
+   
