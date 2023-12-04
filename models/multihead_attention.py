@@ -71,21 +71,3 @@ class MultiHeadAttention(nn.Module):
 		output = rearrange(output, 'b h t d -> b t (h d)')
 		output = self.W_o(output)
 		return output
-
-
-if __name__ == '__main__':
-
-	attention = MultiHeadAttention(dim=512,
-								   num_heads=16,
-								   dim_head=64)
-	
-	q = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
-	k = torch.randn(2, 10, 512)  # (b, timesteps_k, dim)
-	v = torch.randn(2, 10, 512)  # (b, timesteps_v, dim)
-
-	# causal mask used in Masked Multi-Head Attention
-	i, j = q.shape[1], k.shape[1]
-	mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
-
-	output = attention(q, k, v, causal_mask=mask)
-	print(output.shape)

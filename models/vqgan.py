@@ -242,21 +242,3 @@ class VQGAN(nn.Module):
         indices = rearrange(indices, '(b i) -> b i', b=b)
         return indices
 
-
-if __name__ == '__main__':
-
-    codebook_dim = 256
-    codebook_size = 8192
-
-    vqgan = VQGAN(codebook_dim, codebook_size)
-
-    img = torch.randn(2, 3, 256, 256)
-    out, loss = vqgan(img)
-    print(loss)
-
-    imgs = torch.randn(2, 3, 256, 256)
-    indices = vqgan.encode_imgs(imgs)
-    imgs = vqgan.decode_indices(indices)
-    print(imgs.shape)
-   
-

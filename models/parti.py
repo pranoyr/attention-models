@@ -133,37 +133,3 @@ class Parti(nn.Module):
 
 		imgs = self.vq.decode_indices(indices)
 		return(imgs)
-
-
-
-if __name__=="__main__":
-	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-	
-	imgs = torch.randn(2, 3, 256, 256).to(device)
-	texts = ["this is a test", "this is another test"]
-	
-	# Vector Quantizer 
-	codebook_dim = 256
-	codebook_size = 8192
-	vq = VQGAN(codebook_dim, codebook_size)
-
-	# Parti 
-	dim = 512
-	encoder_params = dict(
-		t5_name = "google/t5-v1_1-base",
-	)
- 
-	decoder_params = dict(
-		n_heads = 8,
-		d_head	= 64,
-		depth= 6)
- 
-	model = Parti(dim, vq, **encoder_params, **decoder_params).to(device)
-	loss = model(texts, imgs)
-	loss.backward()
- 
-	# Inference
-	model.eval()
-	with torch.no_grad():
-		imgs = model.generate(texts)
-	print(imgs.shape)
