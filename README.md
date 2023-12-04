@@ -187,7 +187,6 @@ transformer = MaskGitTransformer(
         vocab_size=codebook_size,
         n_heads=16,
         d_head=64,
-        enc_depth=6,
         dec_depth=6)
     
 img = torch.randn(2, 3, 256, 256)

@@ -65,7 +65,6 @@ class MaskGitTransformer(nn.Module):
         vocab_size,
         n_heads=8,
         d_head=64,
-        enc_depth=6,
         dec_depth=6,
     ):
         super().__init__()
