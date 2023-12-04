@@ -195,7 +195,7 @@ class Transformer(nn.Module):
             dec_in = self.pos_enc(dec_in)
             dec_out = self.decoder(dec_in=dec_in, context=context)
             output = self.linear(dec_out)
-
+            # TODO : add temperature
             # sample the last token
             output = torch.argmax(output, dim=-1)[:, -1]
             if output[0] == end_token:

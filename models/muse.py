@@ -103,3 +103,5 @@ class MUSE(nn.Module):
 		output = rearrange(output, "b t c -> b c t")
 		loss = torch.nn.functional.cross_entropy(output, tgt, ignore_index=-1)
 		return loss
+
+	# TODO : generate images from text

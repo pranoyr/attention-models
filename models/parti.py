@@ -123,7 +123,7 @@ class Parti(nn.Module):
 			self.final_norm(dec_out)
 			# to logits
 			logits = self.to_logits(dec_out)
-   
+			# TODO : Sample instead of argmax
 			# sample
 			probs = F.softmax(logits, dim=-1)
 			idx = torch.argmax(probs, dim=-1)[:,-1]
