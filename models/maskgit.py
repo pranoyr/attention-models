@@ -73,10 +73,12 @@ class MaskGitTransformer(nn.Module):
         self.input_proj = nn.Embedding(vocab_size+1, dim)
         self.pos_enc =  nn.Parameter(torch.randn(1, dim))
         self.mask_token_id = vocab_size
-    
+
+        self.init_norm = nn.LayerNorm(dim)
         self.decoder = BidirectionalDecorder(
             dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth
         )
+        self.final_norm = nn.LayerNorm(dim)
         self.linear = nn.Linear(dim, vocab_size)
         
     def fill_mask(self, x):
@@ -100,8 +102,11 @@ class MaskGitTransformer(nn.Module):
         x, tgt = self.fill_mask(x)
         x = self.input_proj(x)
         x += self.pos_enc
-        
+
+        # transformer decoder
+        x = self.init_norm(x)
         dec_out = self.decoder(x)
+        dec_out = self.final_norm(dec_out)
         output = self.linear(dec_out)
         
         # compute loss
