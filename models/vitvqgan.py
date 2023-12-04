@@ -19,11 +19,7 @@ class ViTEncoder(nn.Module):
         num_patches = (img_size // patch_size) ** 2
 
         self.to_patch_embedding = nn.Sequential(
-            Rearrange(
-                "b c (h p1) (w p2) -> b (h w) (p1 p2 c)",
-                p1=self.patch_size,
-                p2=self.patch_size,
-            ),
+            Rearrange("b c (h p1) (w p2) -> b (h w) (p1 p2 c)", p1=self.patch_size, p2=self.patch_size),
             nn.LayerNorm(patch_dim),
             nn.Linear(patch_dim, dim),
             nn.LayerNorm(dim),
@@ -66,13 +62,8 @@ class ViTDecoder(nn.Module):
         x = self.norm(x)
         x = self.fc(x)  # project to original patch dim
 
-        x = rearrange(
-            x,
-            "b (h w) (p1 p2 c) -> b c (h p1) (w p2)",
-            p1=self.patch_size,
-            p2=self.patch_size,
-            h=self.img_size // self.patch_size,
-        )
+        x = rearrange(x, "b (h w) (p1 p2 c) -> b c (h p1) (w p2)", 
+                      p1=self.patch_size, p2=self.patch_size, h=self.img_size // self.patch_size)
         return x
 
 
@@ -94,9 +85,9 @@ class Codebook(nn.Module):
 
         # D - distance between z and embeddings
         d = (
-            torch.sum(z_flattened**2, dim=1, keepdim=True)
-            + torch.sum(self.embedding.weight**2, dim=1)
-            - 2 * (torch.matmul(z_flattened, self.embedding.weight.t()))
+            torch.sum(z_flattened**2, dim=1, keepdim=True) + 
+            torch.sum(self.embedding.weight**2, dim=1) - 
+            2 * (torch.matmul(z_flattened, self.embedding.weight.t()))
         )
 
         min_encoding_indices = torch.argmin(d, dim=1)
@@ -106,9 +97,7 @@ class Codebook(nn.Module):
         b, t, d = z.shape
         z_q = rearrange(z_q, "(b t) d -> b t d", t=t, d=d)
 
-        loss = torch.mean((z_q.detach() - z) ** 2) + self.beta * torch.mean(
-            (z_q - z.detach()) ** 2
-        )
+        loss = torch.mean((z_q.detach() - z) ** 2) + self.beta * torch.mean((z_q - z.detach()) ** 2)
 
         z_q = z + (z_q - z).detach()
 
