@@ -246,6 +246,10 @@ loss.backward()
 Implementation of <a href="https://arxiv.org/pdf/2110.04627.pdf">ViTVQGAN</a>,
 
 ```python
+import torch
+from models import ViTVQGAN
+
+
 ViT_params = dict(
         dim=256,
         img_size=256,

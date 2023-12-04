@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from models import ViTVQGAN
-
 
 import torch
 import torch.nn as nn
