@@ -76,9 +76,7 @@ class EncoderLayer(nn.Module):
     def forward(self, x, context_mask=None):
         x_norm = self.norm1(x)
         # self attention
-        attn_out = self.multihead_attention(
-            q=x_norm, k=x_norm, v=x_norm, context_mask=context_mask
-        )
+        attn_out = self.multihead_attention(q=x_norm, k=x_norm, v=x_norm, context_mask=context_mask)
 
         # ADD & NORM
         x = attn_out + x
@@ -102,9 +100,7 @@ class Decoder(nn.Module):
     def forward(self, dec_in, context, context_mask=None, causal_mask=None):
         # input to the decoder is the previous dec output
         for layer in self.layers:
-            dec_out = layer(
-                dec_in, context, context_mask=context_mask, causal_mask=causal_mask
-            )
+            dec_out = layer(dec_in, context, context_mask=context_mask, causal_mask=causal_mask)
             dec_in = dec_out
 
         return dec_out
@@ -125,18 +121,14 @@ class DecoderLayer(nn.Module):
     def forward(self, dec_inp, context, context_mask=None, causal_mask=None):
         dec_inp_norm = self.norm1(dec_inp)
         # self attention
-        attn_out = self.multihead_attention(
-            q=dec_inp_norm, k=dec_inp_norm, v=dec_inp_norm, causal_mask=causal_mask
-        )
+        attn_out = self.multihead_attention(q=dec_inp_norm, k=dec_inp_norm, v=dec_inp_norm, causal_mask=causal_mask)
 
         # ADD & NORM
         dec_inp = attn_out + dec_inp
         dec_inp_norm = self.norm2(dec_inp)
 
         # cross attention
-        attn_out = self.multihead_attention(
-            q=dec_inp_norm, k=context, v=context, context_mask=context_mask
-        )
+        attn_out = self.multihead_attention(q=dec_inp_norm, k=context, v=context, context_mask=context_mask)
 
         # ADD & NORM
         dec_inp = attn_out + dec_inp
