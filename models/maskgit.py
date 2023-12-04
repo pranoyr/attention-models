@@ -18,24 +18,26 @@ class DecoderLayer(nn.Module):
 
         self.multihead_attention = MultiHeadAttention(dim, n_heads, d_head)
         self.feed_forward = FeedForward(dim)
-        self.norm = nn.LayerNorm(dim)
+        self.norm1 = nn.LayerNorm(dim)
+        self.norm2 = nn.LayerNorm(dim)
+        self.norm3 = nn.LayerNorm(dim)
+        self.context_norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, dec_inp):
+        dec_inp_norm = self.norm1(dec_inp)
         # self attention
-        attn_out = self.multihead_attention(q=dec_inp, k=dec_inp, v=dec_inp)
+        attn_out = self.multihead_attention(q=dec_inp_norm, k=dec_inp_norm, v=dec_inp_norm)
 
         # ADD & NORM
         dec_inp = attn_out + dec_inp
-        dec_inp = self.dropout(self.norm(dec_inp))
+        dec_inp_norm = self.norm2(dec_inp)
 
         # feed forward
-        fc_out = self.feed_forward(dec_inp)
+        fc_out = self.feed_forward(dec_inp_norm)
 
-        # ADD & NORM
-        dec_inp = fc_out + dec_inp
-        dec_out = self.dropout(self.norm(dec_inp))  # e.g.: 32x10x512
-
+        # ADD
+        dec_out = fc_out + dec_inp
         return dec_out
 
 
