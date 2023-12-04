@@ -250,7 +250,7 @@ import torch
 from models import ViTVQGAN
 
 
-ViT_params = dict(
+vit_params = dict(
         dim=256,
         img_size=256,
         patch_size=8,
@@ -262,7 +262,7 @@ ViT_params = dict(
 codebook_params = dict(codebook_size=8192, codebook_dim=32, beta=0.25)
 
 imgs = torch.randn(2, 3, 256, 256)
-vitvqgan = ViTVQGAN(ViT_params, codebook_params)
+vitvqgan = ViTVQGAN(vit_params, codebook_params)
 out, loss = vitvqgan(imgs)
 print(loss)
 
