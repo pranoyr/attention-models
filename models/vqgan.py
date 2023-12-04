@@ -230,13 +230,14 @@ class VQGAN(nn.Module):
     
     def decode_indices(self, indices):
         embeds = self.codebook.indices_to_embeddings(indices)
+        embeds = self.post_quant(embeds)
         imgs = self.decoder(embeds)
         return imgs
     
     def encode_imgs(self, imgs):
+        b = imgs.shape[0]
         enc_imgs = self.encoder(imgs)
         enc_imgs = self.pre_quant(enc_imgs)
-        b , c , h , w = enc_imgs.shape
         _, indices, _ = self.codebook(enc_imgs)
         indices = rearrange(indices, '(b i) -> b i', b=b)
         return indices
@@ -253,8 +254,8 @@ if __name__ == '__main__':
     out, loss = vqgan(img)
     print(loss)
 
-    img = torch.randn(2, 3, 256, 256)
-    indices = vqgan.encode_imgs(img)
+    imgs = torch.randn(2, 3, 256, 256)
+    indices = vqgan.encode_imgs(imgs)
     imgs = vqgan.decode_indices(indices)
     print(imgs.shape)
    

@@ -1,6 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from models import ViTVQGAN
+
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 from einops import rearrange, repeat, pack
 from einops.layers.torch import Rearrange
 from models.transformer import Encoder as TransformerBlock
@@ -22,7 +28,7 @@ class ViTEncoder(nn.Module):
             Rearrange("b c (h p1) (w p2) -> b (h w) (p1 p2 c)", p1=self.patch_size, p2=self.patch_size),
             nn.LayerNorm(patch_dim),
             nn.Linear(patch_dim, dim),
-            nn.LayerNorm(dim),
+            nn.LayerNorm(dim)
         )
 
         self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
@@ -62,6 +68,7 @@ class ViTDecoder(nn.Module):
         x = self.norm(x)
         x = self.fc(x)  # project to original patch dim
 
+        # inverse patches to image
         x = rearrange(x, "b (h w) (p1 p2 c) -> b c (h p1) (w p2)", 
                       p1=self.patch_size, p2=self.patch_size, h=self.img_size // self.patch_size)
         return x
@@ -75,9 +82,7 @@ class Codebook(nn.Module):
         self.beta = beta
 
         self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
-        self.embedding.weight.data.uniform_(
-            -1.0 / self.codebook_size, 1.0 / self.codebook_size
-        )
+        self.embedding.weight.data.uniform_(-1.0 / self.codebook_size, 1.0 / self.codebook_size)
 
     def forward(self, z):
         # for computing the difference between z and embeddings
@@ -103,6 +108,11 @@ class Codebook(nn.Module):
 
         return z_q, min_encoding_indices, loss
 
+    def indices_to_embeddings(self, indices):
+        embeds = self.embedding(indices)
+        return embeds
+
+
 
 class ViTVQGAN(nn.Module):
     def __init__(self, vit_params, codebook_params):
@@ -121,6 +131,20 @@ class ViTVQGAN(nn.Module):
         embeds = self.post_quant(embeds)
         out = self.decoder(embeds)
         return out, loss
+    
+    def decode_indices(self, indices):
+        embeds = self.codebook.indices_to_embeddings(indices)
+        embeds = self.post_quant(embeds)
+        imgs = self.decoder(embeds)
+        return imgs
+    
+    def encode_imgs(self, imgs):
+        b = imgs.shape[0]
+        enc_imgs = self.encoder(imgs)
+        enc_imgs = self.pre_quant(enc_imgs)
+        _, indices, _ = self.codebook(enc_imgs)
+        indices = rearrange(indices, '(b i) -> b i', b=b)
+        return indices
 
 
 if __name__ == "__main__":
@@ -139,3 +163,11 @@ if __name__ == "__main__":
     vitvqgan = ViTVQGAN(ViT_params, codebook_params)
     out, loss = vitvqgan(imgs)
     print(loss)
+
+
+    imgs = torch.randn(2, 3, 256, 256)
+    indices = vitvqgan.encode_imgs(imgs)
+    imgs = vitvqgan.decode_indices(indices)
+    print(imgs.shape)
+
+

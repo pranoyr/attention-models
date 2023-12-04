@@ -158,8 +158,8 @@ img = torch.randn(2, 3, 256, 256)
 out, loss = vqgan(img)
 print(loss)
 
-img = torch.randn(2, 3, 256, 256)
-indices = vqgan.encode_imgs(img)
+imgs = torch.randn(2, 3, 256, 256)
+indices = vqgan.encode_imgs(imgs)
 imgs = vqgan.decode_indices(indices)
 print(imgs.shape)
 ```
@@ -246,19 +246,14 @@ loss.backward()
 Implementation of <a href="https://arxiv.org/pdf/2110.04627.pdf">ViTVQGAN</a>,
 
 ```python
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from models import ViTVQGAN
-
 ViT_params = dict(
-	dim=256,
-	img_size=256,
-	patch_size=8,
-	n_heads=8,
-	d_head=64,
-	depth=6,
-)
+        dim=256,
+        img_size=256,
+        patch_size=8,
+        n_heads=8,
+        d_head=64,
+        depth=6,
+    )
 
 codebook_params = dict(codebook_size=8192, codebook_dim=32, beta=0.25)
 
@@ -266,6 +261,11 @@ imgs = torch.randn(2, 3, 256, 256)
 vitvqgan = ViTVQGAN(ViT_params, codebook_params)
 out, loss = vitvqgan(imgs)
 print(loss)
+
+imgs = torch.randn(2, 3, 256, 256)
+indices = vitvqgan.encode_imgs(imgs)
+imgs = vitvqgan.decode_indices(indices)
+print(imgs.shape)
 ```
 
 
