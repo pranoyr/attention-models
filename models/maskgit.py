@@ -20,7 +20,6 @@ class DecoderLayer(nn.Module):
         self.feed_forward = FeedForward(dim)
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
-        self.context_norm = nn.LayerNorm(dim)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, dec_inp):
