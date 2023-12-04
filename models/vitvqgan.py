@@ -143,29 +143,3 @@ class ViTVQGAN(nn.Module):
         _, indices, _ = self.codebook(enc_imgs)
         indices = rearrange(indices, '(b i) -> b i', b=b)
         return indices
-
-
-if __name__ == "__main__":
-    ViT_params = dict(
-        dim=256,
-        img_size=256,
-        patch_size=8,
-        n_heads=8,
-        d_head=64,
-        depth=6,
-    )
-
-    codebook_params = dict(codebook_size=8192, codebook_dim=32, beta=0.25)
-
-    imgs = torch.randn(2, 3, 256, 256)
-    vitvqgan = ViTVQGAN(ViT_params, codebook_params)
-    out, loss = vitvqgan(imgs)
-    print(loss)
-
-
-    imgs = torch.randn(2, 3, 256, 256)
-    indices = vitvqgan.encode_imgs(imgs)
-    imgs = vitvqgan.decode_indices(indices)
-    print(imgs.shape)
-
-
