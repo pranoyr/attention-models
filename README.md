@@ -12,6 +12,7 @@ The purpose of this repository is not to give the best implementation , but to g
   * [Parti](#parti) (Google's text to image)
   * [MaskGIT](#MaskGIT) (Masked Generative Image Transformer)
   * [Muse](#Muse) (Text-To-Image Generation via Masked Generative Transformers)
+  * [ViTVQGAN](#vitvqgan) (Vector-Quantised Image Modeling with Improved VQGAN)
   
 
 
