@@ -143,3 +143,8 @@ class ViTVQGAN(nn.Module):
         _, indices, _ = self.codebook(enc_imgs)
         indices = rearrange(indices, '(b i) -> b i', b=b)
         return indices
+
+    @property
+    def num_patches(self):
+        num_patches = (self.encoder.img_size // self.encoder.patch_size)  ** 2
+        return num_patches

@@ -7,6 +7,7 @@ import torchvision.transforms as T
 from models.t5 import T5Encoder, get_encoded_dim
 from einops import rearrange, repeat, pack
 from typing import Callable, Optional, List
+from models.positional_encoding import PositionalEncoding
 
 from einops import rearrange, repeat
 from models.transformer import Decoder
@@ -45,6 +46,7 @@ class Parti(nn.Module):
 		):
 		super().__init__()
 		self.dim = dim
+		self.vq = vq
 		
 		#### Text Encoder  ####
 		self.text_encoder = TextEncoder(dim, t5_name, max_length)
@@ -53,8 +55,8 @@ class Parti(nn.Module):
 		self.start_token = nn.Parameter(torch.randn(dim))
 		codebook_size = vq.codebook.codebook_size
 		self.token_emb = nn.Embedding(codebook_size, dim)
-		self.pos_enc =  nn.Parameter(torch.randn(1, 1, dim))
-		self.vq = vq
+		num_patches = vq.num_patches - 1
+		self.pos_enc =  PositionalEncoding(dim, max_len=num_patches)
 		
 		self.transformer_decoder = Decoder(dim, n_heads, d_head, depth)
 		self.init_norm = nn.LayerNorm(dim)
@@ -80,7 +82,7 @@ class Parti(nn.Module):
 		#  convert indices to embeddings
 		img_token_embeds = self.token_emb(img_token_indices) # (batch_size, seq_len, dim)
 		# add positional encoding
-		img_token_embeds += self.pos_enc
+		img_token_embeds = self.pos_enc(img_token_embeds)
 		# add start token
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
 		img_token_embeds = torch.cat((start_token, img_token_embeds), dim=1)
@@ -110,11 +112,11 @@ class Parti(nn.Module):
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
   
 		indices = torch.zeros(b, 0, dtype=torch.long, device=text_embeds.device)	
-		num_iters = (self.vq.encoder.img_size // self.vq.encoder.patch_size) ** 2
+		num_iters = self.vq.num_patches
 		for i in range(num_iters):
 			img_token_embeds = self.token_emb(indices) # (batch_size, seq_len, dim)
 			# add positional encoding
-			img_token_embeds += self.pos_enc
+			img_token_embeds = self.pos_enc(img_token_embeds)
 			# add start token
 			img_token_embeds = torch.cat((start_token, img_token_embeds), dim=1)
 			# decoder
