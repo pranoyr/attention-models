@@ -52,7 +52,8 @@ class MUSE(nn.Module):
 		self.mask_token_id = codebook_size
   
 		self.token_emb = nn.Embedding(codebook_size + 1, dim)
-		self.pos_enc = nn.Parameter(torch.randn(1, 256, dim))
+		num_patches = vq.encoder.num_patches
+		self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
 		self.init_norm = nn.LayerNorm(dim)
 		self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=depth)
 		self.final_norm = nn.LayerNorm(dim)

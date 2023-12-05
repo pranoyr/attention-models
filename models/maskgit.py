@@ -23,7 +23,8 @@ class MaskGitTransformer(nn.Module):
         super().__init__()
 
         self.input_proj = nn.Embedding(vocab_size+1, dim)
-        self.pos_enc =  nn.Parameter(torch.randn(1, 256, dim))
+        num_patches = vq.encoder.num_patches
+        self.pos_enc =  nn.Parameter(torch.randn(1, num_patches, dim))
         self.mask_token_id = vocab_size
 
         self.init_norm = nn.LayerNorm(dim)

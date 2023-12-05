@@ -123,6 +123,7 @@ class Encoder(nn.Module):
         layers.append(GroupNorm(channels[-1]))
         layers.append(Swish())
         layers.append(nn.Conv2d(channels[-1], dim, 3, 1, 1))
+        self.num_patches = 16 * 16
         self.model = nn.Sequential(*layers)
 
     def forward(self, x):
