@@ -242,4 +242,8 @@ class VQGAN(nn.Module):
         _, indices, _ = self.codebook(enc_imgs)
         indices = rearrange(indices, '(b i) -> b i', b=b)
         return indices
+    
+    @property
+    def num_patches(self):
+        return self.encoder.num_patches
 
