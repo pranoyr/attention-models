@@ -102,14 +102,22 @@ Implementation of <a href="https://sites.research.google/parti/">Parti</a>,
 
 ```python
 import torch
-from models import VQGAN, Parti
+from models import VQGAN, Parti, ViTVQGAN
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	
 # Vector Quantizer 
-codebook_dim = 256
-codebook_size = 8192
-vq = VQGAN(codebook_dim, codebook_size)
+vit_params = dict(
+        dim=256,
+        img_size=256,
+        patch_size=8,
+        n_heads=8,
+        d_head=64,
+        depth=6,
+    )
+
+codebook_params = dict(codebook_size=8192, codebook_dim=32)
+vitvqgan = ViTVQGAN(vit_params, codebook_params)
 
 # Parti 
 dim = 512
@@ -123,7 +131,7 @@ decoder_params = dict(
 	d_head=64,
 	depth=6)
  
-model = Parti(dim, vq, **encoder_params, **decoder_params).to(device)
+model = Parti(dim, vq=vitvqgan, **encoder_params, **decoder_params).to(device)
 
 imgs = torch.randn(2, 3, 256, 256).to(device)
 texts = ["this is a test", "this is another test"]

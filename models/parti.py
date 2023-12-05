@@ -109,8 +109,9 @@ class Parti(nn.Module):
 
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
   
-		indices = torch.zeros(b, 0, dtype=torch.long, device=text_embeds.device)			
-		for i in range(256):
+		indices = torch.zeros(b, 0, dtype=torch.long, device=text_embeds.device)	
+		num_iters = (self.vq.encoder.img_size // self.vq.encoder.patch_size) ** 2
+		for i in range(num_iters):
 			img_token_embeds = self.token_emb(indices) # (batch_size, seq_len, dim)
 			# add positional encoding
 			img_token_embeds += self.pos_enc
