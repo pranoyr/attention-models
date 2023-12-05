@@ -156,7 +156,6 @@ vqgan = VQGAN(codebook_dim, codebook_size)
 
 img = torch.randn(2, 3, 256, 256)
 out, loss = vqgan(img)
-print(loss)
 
 imgs = torch.randn(2, 3, 256, 256)
 indices = vqgan.encode_imgs(imgs)
@@ -263,7 +262,6 @@ codebook_params = dict(codebook_size=8192, codebook_dim=32, beta=0.25)
 imgs = torch.randn(2, 3, 256, 256)
 vitvqgan = ViTVQGAN(vit_params, codebook_params)
 out, loss = vitvqgan(imgs)
-print(loss)
 
 imgs = torch.randn(2, 3, 256, 256)
 indices = vitvqgan.encode_imgs(imgs)
