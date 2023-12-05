@@ -189,16 +189,16 @@ vqgan = VQGAN(codebook_dim, codebook_size)
 # MaskGitTransformer
 transformer = MaskGitTransformer(
         dim=512,
+        vq=vqgan
         vocab_size=codebook_size,
         n_heads=16,
         d_head=64,
         dec_depth=6)
     
-img = torch.randn(2, 3, 256, 256)
-x = vqgan.encode_imgs(img)
+imgs = torch.randn(2, 3, 256, 256)
 
 # forward pass
-loss = transformer(x)
+loss = transformer(imgs)
 loss.backward()
 ```
 
