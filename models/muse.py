@@ -50,11 +50,12 @@ class MUSE(nn.Module):
 		self.vq = vq
 		codebook_size = vq.codebook.codebook_size
 		self.mask_token_id = codebook_size
+  
 		self.token_emb = nn.Embedding(codebook_size + 1, dim)
-		self.pos_enc = nn.Parameter(torch.randn(1, 1, dim))
+		self.pos_enc = nn.Parameter(torch.randn(1, 256, dim))
 		self.init_norm = nn.LayerNorm(dim)
-		self.final_norm = nn.LayerNorm(dim)
 		self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=depth)
+		self.final_norm = nn.LayerNorm(dim)
 		self.linear = nn.Linear(dim, codebook_size)
 
 	def fill_mask(self, x):
