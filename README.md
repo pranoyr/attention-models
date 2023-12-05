@@ -271,7 +271,8 @@ imgs = vitvqgan.decode_indices(indices)
 print(imgs.shape)
 ```
 ## TODOs
-- Search for TODO Comments in the repo and contribute. Thank you for contributing to the repo in
+Search for TODO Comments in the repo and contribute. 
+Thank you for contributing to the repo in advance!
 
 
 
