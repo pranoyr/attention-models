@@ -1,5 +1,6 @@
 # ML From Scratch
 
+Implementing some of the SOTA papers based on Transformers.
 
 ## Table of Contents
   * [Attention is All you Need](#attention-is-all-you-need) (Transformer)
