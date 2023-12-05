@@ -1,8 +1,5 @@
 # ML From Scratch
 
-The purpose of this repository is not to give the best implementation , but to give the best explanation.
-
-
 
 ## Table of Contents
   * [Attention is All you Need](#attention-is-all-you-need) (Transformer)
