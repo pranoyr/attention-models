@@ -3,57 +3,12 @@ import torch
 import copy
 import torch.nn.functional as F
 from einops import rearrange, repeat, pack
-from models.multihead_attention import MultiHeadAttention
-from models.transformer import FeedForward, _get_clones
 import math
+from models.transformer import Encoder as BidirectionalDecorder
 
 
 def cosine_schedule(t):
     return torch.cos(t * math.pi / 2)
-
-
-class DecoderLayer(nn.Module):
-    def __init__(self, dim, n_heads, d_head, dropout=0.2):
-        super().__init__()
-
-        self.multihead_attention = MultiHeadAttention(dim, n_heads, d_head)
-        self.feed_forward = FeedForward(dim)
-        self.norm1 = nn.LayerNorm(dim)
-        self.norm2 = nn.LayerNorm(dim)
-        self.dropout = nn.Dropout(dropout)
-
-    def forward(self, dec_inp):
-        dec_inp_norm = self.norm1(dec_inp)
-        # self attention
-        attn_out = self.multihead_attention(q=dec_inp_norm, k=dec_inp_norm, v=dec_inp_norm)
-
-        # ADD & NORM
-        dec_inp = attn_out + dec_inp
-        dec_inp_norm = self.norm2(dec_inp)
-
-        # feed forward
-        fc_out = self.feed_forward(dec_inp_norm)
-
-        # ADD
-        dec_out = fc_out + dec_inp
-        return dec_out
-
-
-class BidirectionalDecorder(nn.Module):
-    def __init__(self, dim, n_heads, d_head, depth):
-        super().__init__()
-
-        decoder_layer = DecoderLayer(dim, n_heads, d_head)
-        self.layers = _get_clones(decoder_layer, depth)
-
-    def forward(self, dec_in):
-        # input to the decoder is the previous dec output
-        for layer in self.layers:
-            dec_out = layer(dec_in)
-            dec_in = dec_out
-
-        return dec_out
-
 
 
 class MaskGitTransformer(nn.Module):
