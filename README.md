@@ -189,7 +189,7 @@ vqgan = VQGAN(codebook_dim, codebook_size)
 # MaskGitTransformer
 transformer = MaskGitTransformer(
         dim=512,
-        vq=vqgan
+        vq=vqgan,
         vocab_size=codebook_size,
         n_heads=16,
         d_head=64,

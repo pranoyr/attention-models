@@ -22,6 +22,8 @@ class MaskGitTransformer(nn.Module):
 		dec_depth=6,
 	):
 		super().__init__()
+  
+		self.vq = vq
 
 		self.input_proj = nn.Embedding(vocab_size+1, dim)
 		num_patches = vq.encoder.num_patches
@@ -54,7 +56,7 @@ class MaskGitTransformer(nn.Module):
 
 	def forward(self, imgs):
 		# quantize images
-		x = self.vq.encode_imgs(imgs)
+		x = self.vq.encode_imgs (imgs)
 		
 		x, tgt = self.fill_mask(x)
 		x = self.input_proj(x)
