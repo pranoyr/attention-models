@@ -17,9 +17,6 @@ def exists(val):
 	return val is not None
 
 
-def gumbel_sample(logits, temperature):
-	return F.gumbel_softmax(logits, tau=temperature, dim=-1, hard=False)
-
 class TextEncoder(torch.nn.Module):
 	def __init__(self, dim, t5_name, max_length):
 		super().__init__()
@@ -127,11 +124,11 @@ class Parti(nn.Module):
 			self.final_norm(dec_out)
 			# to logits
 			logits = self.to_logits(dec_out)
-			# sample from logits
-			final_token = gumbel_sample(logits, temperature=1)[:,-1]
-			final_token = torch.argmax(final_token, dim=-1)
-			final_token = rearrange(final_token, 'b -> b 1')
-			indices = pack((indices, final_token), "b *")[0]
+			# sample 
+			last_token = F.gumbel_softmax(logits[:, -1, :], tau=1, hard=False)
+			last_token = torch.argmax(last_token, dim=-1)
+			last_token = rearrange(last_token, 'b -> b 1')
+			indices = pack((indices, last_token), "b *")[0]
    
 		imgs = self.vq.decode_indices(indices)
 		return(imgs)
