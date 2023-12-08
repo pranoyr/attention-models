@@ -54,7 +54,6 @@ class Parti(nn.Module):
 		self.start_token = nn.Parameter(torch.randn(dim))
 		codebook_size = vq.codebook.codebook_size
 		self.token_emb = nn.Embedding(codebook_size, dim)
-		num_patches = vq.num_patches - 1
 		self.pos_enc =  PositionalEncoding(dim)
 		
 		self.transformer_decoder = Decoder(dim, n_heads, d_head, depth)
