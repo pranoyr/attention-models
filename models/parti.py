@@ -104,12 +104,12 @@ class Parti(nn.Module):
 		return loss
 
 	def generate(self, texts : List[str]):
-
 		b = len(texts)
+		# text encoder
 		context_mask , text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
 
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
-  
+		
 		indices = torch.zeros(b, 0, dtype=torch.long, device=text_embeds.device)	
 		num_iters = self.vq.num_patches
 		for i in range(num_iters):
