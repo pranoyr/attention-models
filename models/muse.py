@@ -22,7 +22,6 @@ class TextEncoder(torch.nn.Module):
 		self.t5_encoder = T5Encoder(t5_name, max_length)
 		text_embed_dim = get_encoded_dim(t5_name)
 		self.text_embed_proj = nn.Linear(text_embed_dim, dim, bias=False)
-		self.layer_norm = nn.LayerNorm(dim)
 
 	def forward(self, texts: List[str]):
 		context_mask, text_embeds = self.t5_encoder(texts)
