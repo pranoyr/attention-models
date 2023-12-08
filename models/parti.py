@@ -49,6 +49,7 @@ class Parti(nn.Module):
 		
 		#### Text Encoder  ####
 		self.text_encoder = TextEncoder(dim, t5_name, max_length)
+		self.context_norm = nn.LayerNorm(dim)
 		
 		#### Transformer Decoder ####
 		self.start_token = nn.Parameter(torch.randn(dim))
@@ -73,6 +74,7 @@ class Parti(nn.Module):
 
 		# text encoder
 		context_mask , text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
+		text_embeds = self.context_norm(text_embeds)
   
 		# convert images to indices
 		img_token_indices = self.vq.encode_imgs(imgs)

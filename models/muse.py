@@ -45,6 +45,7 @@ class MUSE(nn.Module):
 
 		#### Text Encoder  ####
 		self.text_encoder = TextEncoder(dim, t5_name, max_length)
+		self.context_norm = nn.LayerNorm(dim)
 
 		#### Transformer Decoder ####
 		self.vq = vq
@@ -82,6 +83,7 @@ class MUSE(nn.Module):
 	def forward(self, texts, imgs):
 		# text encoder
 		context_mask, text_embeds = self.text_encoder(texts)
+		text_embeds = self.context_norm(text_embeds)
 
 		# quantize images
 		img_token_indices = self.vq.encode_imgs(imgs)
