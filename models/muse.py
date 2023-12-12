@@ -157,9 +157,12 @@ class MUSE(nn.Module):
 			# decoder forward
 			logits = self.decoder(ids, context=text_embeds, context_mask=context_mask)
 			probs = F.softmax(logits, dim = -1)
+   
+			# decaying temperature
+			temperature = 1 / (t + 1)
 			
 			# sample with gumbel softmax
-			pred_ids = F.gumbel_softmax(logits, tau = 1, hard = False, dim = -1).argmax(dim = -1)
+			pred_ids = F.gumbel_softmax(logits, tau = temperature, hard = False, dim = -1).argmax(dim = -1)
 
 			# fill the masked tokens with predicted tokens
 			ids[mask] = pred_ids[mask]
