@@ -242,6 +242,9 @@ texts = ["this is a test", "this is another test"]
 # forward pass
 loss = muse(texts, imgs)
 loss.backward()
+
+# generate images
+imgs = muse.generate(texts)
 ```
 
 
