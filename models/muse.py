@@ -29,6 +29,32 @@ class TextEncoder(torch.nn.Module):
 		return context_mask, text_embeds
 
 
+
+class BidirectionalDecoder(nn.Module):
+	def __init__(self, dim, codebook_size , n_heads, d_head, depth, num_patches):
+		super().__init__()
+		
+		self.token_emb = nn.Embedding(codebook_size + 1, dim)
+		self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
+		self.init_norm = nn.LayerNorm(dim)
+		self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=depth)
+		self.final_norm = nn.LayerNorm(dim)
+		self.linear = nn.Linear(dim, codebook_size)
+
+	def forward(self, img_token_indices, context, context_mask):
+		
+		# add positional encoding
+		img_token_embeds = self.token_emb(img_token_indices)
+		img_token_embeds += self.pos_enc
+
+		# bidirectional decoder
+		img_token_embeds = self.init_norm(img_token_embeds)
+		dec_out = self.decoder(dec_in=img_token_embeds, context=context, context_mask=context_mask)
+		dec_out = self.final_norm(dec_out)
+		output = self.linear(dec_out)
+		return output
+
+
 class MUSE(nn.Module):
 	def __init__(
 		self,
@@ -46,18 +72,14 @@ class MUSE(nn.Module):
 		self.text_encoder = TextEncoder(dim, t5_name, max_length)
 		self.context_norm = nn.LayerNorm(dim)
 
-		#### Transformer Decoder ####
+		#### Vector Quantizer ####
 		self.vq = vq
 		codebook_size = vq.codebook.codebook_size
 		self.mask_token_id = codebook_size
-  
-		self.token_emb = nn.Embedding(codebook_size + 1, dim)
 		num_patches = vq.num_patches
-		self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
-		self.init_norm = nn.LayerNorm(dim)
-		self.decoder = Decoder(dim=dim, n_heads=n_heads, d_head=d_head, depth=depth)
-		self.final_norm = nn.LayerNorm(dim)
-		self.linear = nn.Linear(dim, codebook_size)
+
+		#### Transformer Decoder ####
+		self.decoder = BidirectionalDecoder(dim, codebook_size, n_heads, d_head, depth, num_patches)
 
 	def fill_mask(self, x):
 		device = x.device
@@ -90,21 +112,67 @@ class MUSE(nn.Module):
 		# apply cosine schedule to img tokens
 		img_token_indices, tgt = self.fill_mask(img_token_indices)
 
-		# add positional encoding
-		img_token_embeds = self.token_emb(img_token_indices)
-		img_token_embeds += self.pos_enc
-
-		# bidirectional decoder
-		img_token_embeds = self.init_norm(img_token_embeds)
-		dec_out = self.decoder(
-			dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask
-		)
-		dec_out = self.final_norm(dec_out)
-		output = self.linear(dec_out)
+		# decoder forward
+		logits = self.decoder(img_token_indices, context=text_embeds, context_mask=context_mask)	
 
 		# compute loss
-		output = rearrange(output, "b t c -> b c t")
-		loss = torch.nn.functional.cross_entropy(output, tgt, ignore_index=-1)
+		logits = rearrange(logits, "b t c -> b c t")
+		loss = torch.nn.functional.cross_entropy(logits, tgt, ignore_index=-1)
 		return loss
 
-	# TODO : generate images from text
+	def generate(self, texts):
+		b = len(texts)
+		timesteps = 8
+		num_patches = self.vq.num_patches
+
+		# text encoder
+		context_mask, text_embeds = self.text_encoder(texts)
+		text_embeds = self.context_norm(text_embeds)
+  
+		device = text_embeds.device
+
+		# initialize decoder inputs
+		ids = torch.ones(b, num_patches, dtype=torch.long, device=device) * self.mask_token_id
+		scores = torch.zeros_like(ids).float().to(device)
+		mask = torch.zeros_like(ids).bool().to(device)
+
+		b , n = ids.shape
+
+		for t in torch.arange(0, timesteps):
+			
+			# number of tokens to mask with cosine schedule
+			num_tokens_masked = cosine_schedule(t / timesteps) * n
+			num_tokens_masked = num_tokens_masked.clamp(min = 1.).int().item()
+			
+			# find low probability tokens
+			low_probs_indices = torch.argsort(scores, dim = -1)
+			
+			# indices of tokens to mask
+			masked_indices = low_probs_indices[:, :num_tokens_masked]
+			
+			# True where the tokens are masked, False otherwise
+			mask = mask.scatter_(1, masked_indices, True)
+			
+			# mask the low probability tokens with mask_id
+			ids = ids.masked_fill(mask, self.mask_token_id)
+
+			# decoder forward
+			logits = self.decoder(ids, context=text_embeds, context_mask=context_mask)
+			probs = F.softmax(logits, dim = -1)
+			
+			# sample with gumbel softmax
+			pred_ids = F.gumbel_softmax(logits, tau = 1, hard = False, dim = -1).argmax(dim = -1)
+
+			# fill the masked tokens with predicted tokens
+			ids[mask] = pred_ids[mask]
+			
+			# update scores
+			scores = probs.gather(2, rearrange(pred_ids, 'b t -> b t 1'))
+			scores = rearrange(scores, 'b t 1 -> b t')
+			
+			mask = torch.zeros_like(ids).bool()
+
+		imgs = self.vq.decode_indices(ids)
+		return imgs
+		
+
