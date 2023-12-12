@@ -29,7 +29,6 @@ class TextEncoder(torch.nn.Module):
 		return context_mask, text_embeds
 
 
-
 class BidirectionalDecoder(nn.Module):
 	def __init__(self, dim, codebook_size , n_heads, d_head, depth, num_patches):
 		super().__init__()
