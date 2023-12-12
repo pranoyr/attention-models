@@ -137,7 +137,6 @@ class MUSE(nn.Module):
 		b , n = ids.shape
 
 		for t in torch.arange(0, timesteps):
-			
 			# number of tokens to mask with cosine schedule
 			num_tokens_masked = cosine_schedule(t / timesteps) * n
 			num_tokens_masked = num_tokens_masked.clamp(min = 1.).int()
