@@ -64,7 +64,7 @@ class MUSE(nn.Module):
 		T = 8  # max number of timesteps during inference
 		# sample the timestep from uniform distribution
 		b, n = x.shape
-		t = torch.randint(1, T, (1,))
+		t = torch.randint(0, T, (1,))
 		num_tokens_masked = cosine_schedule(t / T) * n
 		num_tokens_masked = num_tokens_masked.clamp(min=1.0).int()
 		num_tokens_masked = num_tokens_masked.to(device)
