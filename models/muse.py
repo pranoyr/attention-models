@@ -33,7 +33,7 @@ class TextEncoder(torch.nn.Module):
 class BidirectionalDecoder(nn.Module):
 	def __init__(self, dim, codebook_size , n_heads, d_head, depth, num_patches):
 		super().__init__()
-		
+  
 		self.token_emb = nn.Embedding(codebook_size + 1, dim)
 		self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
 		self.init_norm = nn.LayerNorm(dim)
@@ -42,7 +42,6 @@ class BidirectionalDecoder(nn.Module):
 		self.linear = nn.Linear(dim, codebook_size)
 
 	def forward(self, img_token_indices, context, context_mask):
-		
 		# add positional encoding
 		img_token_embeds = self.token_emb(img_token_indices)
 		img_token_embeds += self.pos_enc
@@ -120,9 +119,8 @@ class MUSE(nn.Module):
 		loss = torch.nn.functional.cross_entropy(logits, tgt, ignore_index=-1)
 		return loss
 
-	def generate(self, texts):
+	def generate(self, texts, timesteps = 18):
 		b = len(texts)
-		timesteps = 8
 		num_patches = self.vq.num_patches
 
 		# text encoder
@@ -142,7 +140,7 @@ class MUSE(nn.Module):
 			
 			# number of tokens to mask with cosine schedule
 			num_tokens_masked = cosine_schedule(t / timesteps) * n
-			num_tokens_masked = num_tokens_masked.clamp(min = 1.).int().item()
+			num_tokens_masked = num_tokens_masked.clamp(min = 1.).int()
 			
 			# find low probability tokens
 			low_probs_indices = torch.argsort(scores, dim = -1)
