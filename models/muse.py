@@ -49,8 +49,8 @@ class BidirectionalDecoder(nn.Module):
 		img_token_embeds = self.init_norm(img_token_embeds)
 		dec_out = self.decoder(dec_in=img_token_embeds, context=context, context_mask=context_mask)
 		dec_out = self.final_norm(dec_out)
-		output = self.linear(dec_out)
-		return output
+		logits = self.linear(dec_out)
+		return logits
 
 
 class MUSE(nn.Module):
