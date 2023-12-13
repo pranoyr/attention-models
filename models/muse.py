@@ -88,9 +88,9 @@ class MUSE(nn.Module):
 		#### Transformer Decoder ####
 		self.decoder = BidirectionalDecoder(dim, codebook_size, n_heads, d_head, depth, num_patches)
 
-	def fill_mask(self, x):
+	def fill_mask(self, x, T = 18):
 		device = x.device
-		T = 8  # max number of timesteps during inference
+
 		# sample the timestep from uniform distribution
 		b, n = x.shape
 		t = torch.randint(0, T, (1,))
