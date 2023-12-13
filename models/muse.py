@@ -156,7 +156,7 @@ class MUSE(nn.Module):
 			masked_indices = low_probs_indices[:, :num_tokens_masked]
 			
 			# True where the tokens are masked, False otherwise
-			mask = mask.scatter_(1, masked_indices, True)
+			mask.scatter_(1, masked_indices, True)
 			
 			# mask the low probability tokens with mask_id
 			ids = ids.masked_fill(mask, self.mask_token_id)
