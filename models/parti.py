@@ -8,6 +8,7 @@ from models.t5 import T5Encoder, get_encoded_dim
 from einops import rearrange, repeat, pack
 from typing import Callable, Optional, List
 from models.positional_encoding import PositionalEncoding
+import math
 
 from einops import rearrange, repeat
 from models.transformer import Decoder
@@ -15,6 +16,14 @@ from models.vqgan import VQGAN
 
 def exists(val):
 	return val is not None
+
+def filter_logits(logits, p=0.9):
+	n_classes  = logits.shape[-1]
+	k = math.ceil((1 - p) * n_classes)
+	val, ind = logits.topk(k, dim = -1)
+	filtered_logits = torch.full_like(logits, float('-inf'))
+	filtered_logits.scatter_(2, ind, val)
+	return filtered_logits
 
 
 class TextEncoder(torch.nn.Module):
@@ -125,6 +134,7 @@ class Parti(nn.Module):
 			# to logits
 			logits = self.to_logits(dec_out)
 			# sample 
+			logits = filter_logits(logits, p=0.9)
 			last_token = F.gumbel_softmax(logits[:, -1, :], tau=1, hard=False)
 			last_token = torch.argmax(last_token, dim=-1)
 			last_token = rearrange(last_token, 'b -> b 1')

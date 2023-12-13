@@ -14,6 +14,15 @@ from models.transformer import Decoder
 def cosine_schedule(t):
 	return torch.cos(t * math.pi / 2)
 
+def filter_logits(logits, p=0.9):
+	n_classes  = logits.shape[-1]
+	k = math.ceil((1 - p) * n_classes)
+	val, ind = logits.topk(k, dim = -1)
+	filtered_logits = torch.full_like(logits, float('-inf'))
+	filtered_logits.scatter_(2, ind, val)
+	return filtered_logits
+
+
 
 class TextEncoder(torch.nn.Module):
 	def __init__(self, dim, t5_name, max_length):
@@ -160,6 +169,7 @@ class MUSE(nn.Module):
 			temperature = 1 / (t + 1)
 			
 			# sample with gumbel softmax
+			logits = filter_logits(logits, p=0.9)
 			pred_ids = F.gumbel_softmax(logits, tau = temperature, hard = False, dim = -1).argmax(dim = -1)
 
 			# fill the masked tokens with predicted tokens
