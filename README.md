@@ -253,9 +253,9 @@ imgs = muse.generate(texts)
 Implementation of <a href="https://arxiv.org/pdf/2110.04627.pdf">ViTVQGAN</a>,
 
 Training 
-'''bash
+```bash
 python main.py --config=/cfg/vitvqgan.yaml
-'''
+```
 
 ```python
 import torch
