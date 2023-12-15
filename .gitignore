@@ -1,3 +1,7 @@
 /experiments
 *.pyc
 sample.py
+/wandb
+*.png
+*.jpg
+*.pt

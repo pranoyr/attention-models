@@ -7,3 +7,5 @@ from .maskgit import MaskGitTransformer
 from .muse import MUSE
 from .vitvqgan import ViTVQGAN
 
+from .model_factory import build_model
+
