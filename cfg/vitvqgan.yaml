@@ -23,7 +23,7 @@ model:
         patch_size : 8
         n_heads : 8
         d_head : 64
-        depth : 6
+        depth : 8
 
 
 dataset:
@@ -36,7 +36,7 @@ dataset:
         batch_size: 4
         persistent_workers: True
         shuffle : True
-        train_test_split : 0.99
+        train_test_split : 0.9
     preprocessing:
         resolution: 256
         center_crop: False

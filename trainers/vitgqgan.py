@@ -201,7 +201,7 @@ class VQGANTrainer(nn.Module):
 
 				
 					if not (self.global_step % self.save_every):
-						self.save()
+						self.save(rewrite=True)
 					
 					if not (self.global_step % self.sample_every):
 						self.evaluate()
@@ -219,11 +219,13 @@ class VQGANTrainer(nn.Module):
 		self.accelerator.end_training()        
 		print("Train finished!")
 		
-	def save(self):
+	def save(self, rewrite=False):
 		"""Save checkpoint"""
-  
+
 		filename = os.path.join(self.checkpoint_folder, f'vit_vq_step_{self.global_step}.pt')
-   
+		if rewrite:
+			filename = os.path.join(self.checkpoint_folder, f'vit_vq.pt')
+		
 		checkpoint={
 				'step': self.global_step,
 				'state_dict': self.accelerator.unwrap_model(self.model).state_dict(),
@@ -258,14 +260,16 @@ class VQGANTrainer(nn.Module):
 					img = batch[0]
 				else:
 					img = batch
+				if i == 10:
+					break
 				img = img.to(self.device)
 				rec, _ = self.vqvae(img)
 				imgs_and_recs = torch.stack((img, rec), dim=0)
 				imgs_and_recs = rearrange(imgs_and_recs, 'r b ... -> (b r) ...')
 				imgs_and_recs = imgs_and_recs.detach().cpu().float()
-				
+
 				grid = make_grid(imgs_and_recs, nrow=6, normalize=True, value_range=(-1, 1))
-				save_image(grid, os.path.join(self.image_saved_dir, f'step_{self.global_step}_{i}.png'))
+				save_image(grid, os.path.join(self.image_saved_dir, f'step_{i}.png'))
 		self.vqvae.train()
 
 

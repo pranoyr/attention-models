@@ -30,8 +30,8 @@ class ViTEncoder(nn.Module):
         )
 
         self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
+        self.pre_norm = nn.LayerNorm(dim)
         self.encoder = TransformerBlock(dim, n_heads, d_head, depth)
-
         self.final_norm = nn.LayerNorm(dim)
 
     def forward(self, x):
@@ -40,6 +40,7 @@ class ViTEncoder(nn.Module):
         # add positional encoding
         x = self.pos_enc + x
         # encoder
+        x = self.pre_norm(x)
         x = self.encoder(x)
         x = self.final_norm(x)
         return x
@@ -56,14 +57,17 @@ class ViTDecoder(nn.Module):
         num_patches = (img_size // patch_size) ** 2
 
         self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
+        self.pre_norm = nn.LayerNorm(dim)
         self.decoder = TransformerBlock(dim, n_heads, d_head, depth)
-        self.norm = nn.LayerNorm(dim)
+        self.final_norm = nn.LayerNorm(dim)
         self.fc = nn.Linear(dim, patch_dim)
 
     def forward(self, x):
         x = x + self.pos_enc
+
+        x = self.pre_norm(x)
         x = self.decoder(x)
-        x = self.norm(x)
+        x = self.final_norm(x)
         x = self.fc(x)  # project to original patch dim
 
         # inverse patches to image
