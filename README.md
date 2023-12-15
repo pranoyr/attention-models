@@ -252,12 +252,6 @@ imgs = muse.generate(texts)
 
 Implementation of <a href="https://arxiv.org/pdf/2110.04627.pdf">ViTVQGAN</a>,
 
-### Training
-To train ViTVQGAN, run:
-```bash
-python main.py --config=/cfg/vitvqgan.yaml
-```
-
 ```python
 import torch
 from models import ViTVQGAN
@@ -283,6 +277,12 @@ indices = vitvqgan.encode_imgs(imgs)
 imgs = vitvqgan.decode_indices(indices)
 print(imgs.shape)
 ```
+### Training
+To train ViTVQGAN, run:
+```bash
+python main.py --config=/cfg/vitvqgan.yaml
+```
+
 ## TODOs
 Search for TODO Comments in the repo and contribute. 
 Thank you for contributing to the repo in advance!
