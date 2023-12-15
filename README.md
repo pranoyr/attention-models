@@ -278,7 +278,6 @@ imgs = vitvqgan.decode_indices(indices)
 print(imgs.shape)
 ```
 ### Training
-To train ViTVQGAN, run:
 ```bash
 python main.py --config=/cfg/vitvqgan.yaml
 ```
