@@ -201,7 +201,7 @@ class VQGANTrainer(nn.Module):
 
 				
 					if not (self.global_step % self.save_every):
-						self.save(rewrite=True)
+						self.save_ckpt(rewrite=True)
 					
 					if not (self.global_step % self.sample_every):
 						self.evaluate()
@@ -219,7 +219,7 @@ class VQGANTrainer(nn.Module):
 		self.accelerator.end_training()        
 		print("Train finished!")
 		
-	def save(self, rewrite=False):
+	def save_ckpt(self, rewrite=False):
 		"""Save checkpoint"""
 
 		filename = os.path.join(self.checkpoint_folder, f'vit_vq_step_{self.global_step}.pt')
@@ -228,9 +228,7 @@ class VQGANTrainer(nn.Module):
 		
 		checkpoint={
 				'step': self.global_step,
-				'state_dict': self.accelerator.unwrap_model(self.model).state_dict(),
-				'optimizer': self.optimizer.state_dict(),
-				'scheduler': self.scheduler.state_dict()
+				'state_dict': self.accelerator.unwrap_model(self.vqvae).state_dict()
 			}
 
 		self.accelerator.save(checkpoint, filename)
@@ -242,15 +240,9 @@ class VQGANTrainer(nn.Module):
 		checkpoint = self.accelerator.load(checkpoint_path)
 		self.global_step = checkpoint['step']
 		self.model.load_state_dict(checkpoint['state_dict'])
-		self.optimizer.load_state_dict(checkpoint['optimizer'])
-		self.scheduler.load_state_dict(checkpoint['scheduler'])
 		logging.info("Resume from checkpoint %s (global_step %d)", checkpoint_path, self.global_step)
-					
-	def save(self):
-		self.accelerator.wait_for_everyone()
-		state_dict = self.accelerator.unwrap_model(self.vqvae).state_dict()
-		self.accelerator.save(state_dict, os.path.join(self.checkpoint_folder, f'vit_vq_step_{self.global_step}.pt'))
-													   
+
+
 	@torch.no_grad()
 	def evaluate(self):
 		self.vqvae.eval()
