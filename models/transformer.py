@@ -51,10 +51,10 @@ class FeedForward(nn.Module):
 
 
 class Encoder(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth):
+	def __init__(self, dim, n_heads, d_head, depth, dropout):
 		super().__init__()
 
-		encoder_layer = EncoderLayer(dim, n_heads, d_head)
+		encoder_layer = EncoderLayer(dim, n_heads, d_head, dropout)
 		self.layers = _get_clones(encoder_layer, depth)
 
 	def forward(self, x, context_mask=None):
@@ -64,10 +64,10 @@ class Encoder(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-	def __init__(self, dim, n_heads, d_head, dropout=0.2):
+	def __init__(self, dim, n_heads, d_head, dropout):
 		super().__init__()
 
-		self.multihead_attention = MultiHeadAttention(dim, n_heads, d_head)
+		self.self_attn = MultiHeadAttention(dim, n_heads, d_head, dropout)
 		self.feed_forward = FeedForward(dim)
 		self.norm1 = nn.LayerNorm(dim)
 		self.norm2 = nn.LayerNorm(dim)
@@ -76,7 +76,7 @@ class EncoderLayer(nn.Module):
 	def forward(self, x, context_mask=None):
 		x_norm = self.norm1(x)
 		# self attention
-		attn_out = self.multihead_attention(q=x_norm, k=x_norm, v=x_norm, context_mask=context_mask)
+		attn_out = self.self_attn(q=x_norm, k=x_norm, v=x_norm, context_mask=context_mask)
 
 		# ADD & NORM
 		x = attn_out + x
@@ -91,10 +91,10 @@ class EncoderLayer(nn.Module):
 
 
 class Decoder(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth):
+	def __init__(self, dim, n_heads, d_head, depth, dropout):
 		super().__init__()
 
-		decoder_layer = DecoderLayer(dim, n_heads, d_head)
+		decoder_layer = DecoderLayer(dim, n_heads, d_head, dropout)
 		self.layers = _get_clones(decoder_layer, depth)
 
 	def forward(self, dec_in, context, context_mask=None, causal_mask=None):
@@ -107,10 +107,12 @@ class Decoder(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-	def __init__(self, dim, n_heads, d_head, dropout=0.2):
+	def __init__(self, dim, n_heads, d_head, dropout):
 		super().__init__()
 
-		self.multihead_attention = MultiHeadAttention(dim, n_heads, d_head)
+		self.self_attn = MultiHeadAttention(dim, n_heads, d_head, dropout)
+		self.cross_attn = MultiHeadAttention(dim, n_heads, d_head, dropout)
+		
 		self.feed_forward = FeedForward(dim)
 		self.norm1 = nn.LayerNorm(dim)
 		self.norm2 = nn.LayerNorm(dim)
@@ -120,14 +122,14 @@ class DecoderLayer(nn.Module):
 	def forward(self, dec_inp, context, context_mask=None, causal_mask=None):
 		dec_inp_norm = self.norm1(dec_inp)
 		# self attention
-		attn_out = self.multihead_attention(q=dec_inp_norm, k=dec_inp_norm, v=dec_inp_norm, causal_mask=causal_mask)
+		attn_out = self.self_attn(q=dec_inp_norm, k=dec_inp_norm, v=dec_inp_norm, causal_mask=causal_mask)
 
 		# ADD & NORM
 		dec_inp = attn_out + dec_inp
 		dec_inp_norm = self.norm2(dec_inp)
 
 		# cross attention
-		attn_out = self.multihead_attention(q=dec_inp_norm, k=context, v=context, context_mask=context_mask)
+		attn_out = self.cross_attn(q=dec_inp_norm, k=context, v=context, context_mask=context_mask)
 
 		# ADD & NORM
 		dec_inp = attn_out + dec_inp

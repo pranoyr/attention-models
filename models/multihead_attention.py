@@ -19,7 +19,7 @@ def exists(val):
 	return val is not None
 
 class MultiHeadAttention(nn.Module):
-	def __init__(self, dim, num_heads, dim_head):
+	def __init__(self, dim, num_heads=8, dim_head=64, dropout=0.0):
 		super(MultiHeadAttention, self).__init__()
 
 		self.dim = dim
@@ -30,6 +30,7 @@ class MultiHeadAttention(nn.Module):
 		self.W_k = nn.Linear(dim, num_heads * dim_head)
 		self.W_v = nn.Linear(dim, num_heads * dim_head)
 		self.W_o = nn.Linear(num_heads * dim_head, dim)
+		self.dropout = nn.Dropout(dropout)
 
 		self.scale = dim_head ** -0.5
 
@@ -70,4 +71,5 @@ class MultiHeadAttention(nn.Module):
 		# combine heads
 		output = rearrange(output, 'b h t d -> b t (h d)')
 		output = self.W_o(output)
+		output = self.dropout(output)
 		return output
