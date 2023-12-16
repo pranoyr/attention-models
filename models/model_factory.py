@@ -15,6 +15,7 @@ def build_model(cfg):
             n_heads = cfg.model.transformer.n_heads,
             d_head = cfg.model.transformer.d_head,
             depth = cfg.model.transformer.depth,
+            dropout = cfg.model.transformer.dropout
         )
         codebook_params = dict(
             codebook_dim = cfg.codebook.codebook_dim,
