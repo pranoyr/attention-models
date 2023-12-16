@@ -100,12 +100,16 @@ class VQGANTrainer(nn.Module):
 			self.discr,
 			self.g_optim,
 			self.d_optim,
+			self.g_sched,
+			self.d_sched
 	
 		) = self.accelerator.prepare(
 			self.vqvae,
 			self.discr,
 			self.g_optim,
 			self.d_optim,
+			self.g_sched,
+			self.d_sched
 	 )
 		
 		# logging details
@@ -183,7 +187,7 @@ class VQGANTrainer(nn.Module):
 						if self.accelerator.sync_gradients:
 							self.accelerator.clip_grad_norm_(self.discr.parameters(), self.max_grad_norm)
 						self.d_optim.step()
-						self.d_sched.step(self.global_step)
+						self.d_sched.step()
 						self.d_optim.zero_grad()
 						
 					
@@ -206,7 +210,7 @@ class VQGANTrainer(nn.Module):
 						if self.accelerator.sync_gradients:
 							self.accelerator.clip_grad_norm_(self.vqvae.parameters(), self.max_grad_norm)
 						self.g_optim.step()
-						self.g_sched.step(self.global_step)
+						self.g_sched.step()
 						self.g_optim.zero_grad()   
 
 				
