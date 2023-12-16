@@ -11,13 +11,13 @@ Implementing some of the SOTA papers based on Transformers.
   * [MaskGIT](#MaskGIT) (Masked Generative Image Transformer)
   * [Muse](#Muse) (Text-To-Image Generation via Masked Generative Transformers)
   <details>
-  * [ViTVQGAN](#vitvqgan) (Vector-Quantised Image Modeling with Improved VQGAN)
+  <summary>
+* [ViTVQGAN](#vitvqgan) (Vector-Quantised Image Modeling with Improved VQGAN)
 
     - [x] Training Pipeline
     - [ ] Pre-Trained Model
-
     
-
+</summary>
   </details>
 
 
