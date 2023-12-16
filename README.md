@@ -13,11 +13,11 @@ Implementing some of the SOTA papers based on Transformers.
   <details>
   <summary>
 * [ViTVQGAN](#vitvqgan) (Vector-Quantised Image Modeling with Improved VQGAN)
-
+</summary>
     - [x] Training Pipeline
     - [ ] Pre-Trained Model
     
-</summary>
+
   </details>
 
 
