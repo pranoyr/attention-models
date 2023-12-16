@@ -9,6 +9,8 @@ from einops import rearrange, repeat, pack
 from einops.layers.torch import Rearrange
 from models.transformer import Encoder as TransformerBlock
 
+def l2_norm(x):
+    return F.normalize(x, p=2, dim=1)
 
 class ViTEncoder(nn.Module):
     def __init__(self, dim, img_size, patch_size, n_heads, d_head, depth):
@@ -87,14 +89,17 @@ class Codebook(nn.Module):
         self.embedding.weight.data.uniform_(-1.0 / self.codebook_size, 1.0 / self.codebook_size)
 
     def forward(self, z):
+        z = l2_norm(z)
         # for computing the difference between z and embeddings
         z_flattened = rearrange(z, "b t d -> (b t) d")
+
+        embed_norm = l2_norm(self.embedding.weight)
 
         # D - distance between z and embeddings
         d = (
             torch.sum(z_flattened**2, dim=1, keepdim=True) + 
             torch.sum(self.embedding.weight**2, dim=1) - 
-            2 * (torch.matmul(z_flattened, self.embedding.weight.t()))
+            2 * (torch.matmul(z_flattened, embed_norm.t()))
         )
 
         min_encoding_indices = torch.argmin(d, dim=1)
@@ -103,6 +108,8 @@ class Codebook(nn.Module):
 
         b, t, d = z.shape
         z_q = rearrange(z_q, "(b t) d -> b t d", t=t, d=d)
+
+        z_q = l2_norm(z_q)
 
         loss = torch.mean((z_q.detach() - z) ** 2) + self.beta * torch.mean((z_q - z.detach()) ** 2)
 
