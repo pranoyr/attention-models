@@ -34,7 +34,7 @@ dataset:
         val_path: null
         num_workers: 4
         pin_memory: True
-        batch_size: 4
+        batch_size: 8
         persistent_workers: True
         shuffle : True
         train_test_split : 0.9
@@ -42,7 +42,7 @@ dataset:
         resolution: 256
         center_crop: False
         random_flip: False
-        random_crop: True
+        random_crop: False
 
 optimizer:
     name: adamw
@@ -57,10 +57,10 @@ lr_scheduler:
     scheduler: constant_with_warmup
     params:
         learning_rate: ${optimizer.params.learning_rate}
-        warmup_steps: 500
+        warmup_steps: 15000
 
 training:
     gradient_accumulation_steps: 16
     mixed_precision: "no"
     seed: 42
-    num_epochs: 1000
+    num_epochs: 200

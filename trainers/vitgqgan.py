@@ -1,6 +1,7 @@
 import os
 import torch
 import random
+import math
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
@@ -14,6 +15,7 @@ from tqdm.auto import tqdm
 from lpips import LPIPS
 from einops import rearrange
 from models.utils import NLayerDiscriminator
+from transformers import get_cosine_schedule_with_warmup
 # import constant_learnign rate swith warm up
 import logging
 from transformers import get_constant_schedule_with_warmup
@@ -36,7 +38,6 @@ def g_nonsaturating_loss(fake):
 	loss = F.softplus(-fake).mean()
 
 	return loss
-
 
 
 class VQGANTrainer(nn.Module):
@@ -80,8 +81,10 @@ class VQGANTrainer(nn.Module):
 		self.d_optim = Adam(self.discr.parameters(), lr=lr, betas=(beta1, beta2))
 		
 		# Scheduler
-		self.g_sched = get_constant_schedule_with_warmup(self.g_optim, warmup_steps)
-		self.d_sched = get_constant_schedule_with_warmup(self.d_optim, warmup_steps)
+		self.g_sched = get_cosine_schedule_with_warmup(self.g_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
+		self.d_sched = get_cosine_schedule_with_warmup(self.d_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
+
+		self.g_sched
   
 
 		# define losses
@@ -118,9 +121,16 @@ class VQGANTrainer(nn.Module):
 		
 		self.image_saved_dir = os.path.join(cfg.experiment.output_folder, 'images')
 		os.makedirs(self.image_saved_dir, exist_ok=True)
+
+
+		logging.info(f"Train dataset size: {len(self.train_dl.dataset)}")
+		logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
+
+		effetive_batch_size = cfg.dataset.params.batch_size * cfg.training.gradient_accumulation_steps
+		num_iters_per_epoch = math.ceil(len(self.train_dl.dataset) / effetive_batch_size)
+		logging.info(f"Number of iterations per epoch: {num_iters_per_epoch}")
+		logging.info(f"Total training iterations: {self.num_epoch * num_iters_per_epoch}")
 		
-		n_parameters = sum(p.numel() for p in self.parameters() if p.requires_grad)
-		print(f'number of learnable parameters: {n_parameters//1e6}M')
 	
 	@property
 	def device(self):
