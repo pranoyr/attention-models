@@ -10,12 +10,14 @@ Implementing some of the SOTA papers based on Transformers.
   * [Parti](#parti) (Google's text to image)
   * [MaskGIT](#MaskGIT) (Masked Generative Image Transformer)
   * [Muse](#Muse) (Text-To-Image Generation via Masked Generative Transformers)
-  * [ViTVQGAN](#vitvqgan) (Vector-Quantised Image Modeling with Improved VQGAN)
+  * <details>[ViTVQGAN](#vitvqgan) (Vector-Quantised Image Modeling with Improved VQGAN)
 
     - [x] Training Pipeline
     - [ ] Pre-Trained Model
 
-  
+    
+
+  </details>
 
 
 ## Attention is All you Need
