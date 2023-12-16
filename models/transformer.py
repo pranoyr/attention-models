@@ -71,8 +71,7 @@ class EncoderLayer(nn.Module):
 		self.feed_forward = FeedForward(dim)
 		self.norm1 = nn.LayerNorm(dim)
 		self.norm2 = nn.LayerNorm(dim)
-		self.dropout = nn.Dropout(dropout)
-
+		
 	def forward(self, x, context_mask=None):
 		x_norm = self.norm1(x)
 		# self attention
@@ -117,7 +116,6 @@ class DecoderLayer(nn.Module):
 		self.norm1 = nn.LayerNorm(dim)
 		self.norm2 = nn.LayerNorm(dim)
 		self.norm3 = nn.LayerNorm(dim)
-		self.dropout = nn.Dropout(dropout)
 
 	def forward(self, dec_inp, context, context_mask=None, causal_mask=None):
 		dec_inp_norm = self.norm1(dec_inp)
