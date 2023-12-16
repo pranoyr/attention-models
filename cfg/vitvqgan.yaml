@@ -6,7 +6,7 @@ experiment:
     save_every: 1000
     eval_every: 500
     sample_every: 1000
-    log_every: 1
+    log_every: 100
     log_level: info
     resume_path_from_checkpoint: null
 
@@ -34,7 +34,7 @@ dataset:
         val_path: null
         num_workers: 4
         pin_memory: True
-        batch_size: 8
+        batch_size: 16
         persistent_workers: True
         shuffle : True
         train_test_split : 0.9
@@ -57,10 +57,10 @@ lr_scheduler:
     scheduler: constant_with_warmup
     params:
         learning_rate: ${optimizer.params.learning_rate}
-        warmup_steps: 15000
+        warmup_steps: 133080
 
 training:
-    gradient_accumulation_steps: 16
+    gradient_accumulation_steps: 1
     mixed_precision: "no"
     seed: 42
     num_epochs: 200
