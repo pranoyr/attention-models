@@ -13,7 +13,7 @@ def l2_norm(x):
     return F.normalize(x, p=2, dim=1)
 
 class ViTEncoder(nn.Module):
-    def __init__(self, dim, img_size, patch_size, n_heads, d_head, depth):
+    def __init__(self, dim, img_size, patch_size, n_heads, d_head, depth, dropout):
         super().__init__()
 
         self.dim = dim  # model dimension
@@ -33,7 +33,7 @@ class ViTEncoder(nn.Module):
 
         self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
         self.pre_norm = nn.LayerNorm(dim)
-        self.encoder = TransformerBlock(dim, n_heads, d_head, depth)
+        self.encoder = TransformerBlock(dim, n_heads, d_head, depth, dropout)
         self.final_norm = nn.LayerNorm(dim)
 
     def forward(self, x):
@@ -49,7 +49,7 @@ class ViTEncoder(nn.Module):
 
 
 class ViTDecoder(nn.Module):
-    def __init__(self, dim, img_size, patch_size, n_heads, d_head, depth):
+    def __init__(self, dim, img_size, patch_size, n_heads, d_head, depth, dropout):
         super().__init__()
         self.patch_size = patch_size
         self.img_size = img_size
@@ -60,7 +60,7 @@ class ViTDecoder(nn.Module):
 
         self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
         self.pre_norm = nn.LayerNorm(dim)
-        self.decoder = TransformerBlock(dim, n_heads, d_head, depth)
+        self.decoder = TransformerBlock(dim, n_heads, d_head, depth, dropout)
         self.final_norm = nn.LayerNorm(dim)
         self.fc = nn.Linear(dim, patch_dim)
 
