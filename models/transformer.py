@@ -51,7 +51,7 @@ class FeedForward(nn.Module):
 
 
 class Encoder(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth, dropout):
+	def __init__(self, dim, n_heads, d_head, depth, dropout=0.):
 		super().__init__()
 
 		encoder_layer = EncoderLayer(dim, n_heads, d_head, dropout)
@@ -91,7 +91,7 @@ class EncoderLayer(nn.Module):
 
 
 class Decoder(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth, dropout):
+	def __init__(self, dim, n_heads, d_head, depth, dropout=0.):
 		super().__init__()
 
 		decoder_layer = DecoderLayer(dim, n_heads, d_head, dropout)
