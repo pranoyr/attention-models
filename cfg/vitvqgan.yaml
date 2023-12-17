@@ -54,7 +54,7 @@ optimizer:
         epsilon: 1e-8
 
 lr_scheduler:
-    scheduler: constant_with_warmup
+    scheduler: cosine_with_warmup
     params:
         learning_rate: ${optimizer.params.learning_rate}
         warmup_steps: 133080

@@ -84,9 +84,7 @@ class VQGANTrainer(nn.Module):
 		self.g_sched = get_cosine_schedule_with_warmup(self.g_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
 		self.d_sched = get_cosine_schedule_with_warmup(self.d_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
 
-		self.g_sched
-  
-
+		
 		# define losses
 		self.per_loss = LPIPS(net='vgg').to(self.device).eval()
 		for param in self.per_loss.parameters():
