@@ -87,6 +87,8 @@ class MUSE(nn.Module):
 
 		#### Transformer Decoder ####
 		self.decoder = BidirectionalDecoder(dim, codebook_size, n_heads, d_head, depth, num_patches)
+  
+		self.ignore_index = -1
 
 	def fill_mask(self, x, T = 18):
 		device = x.device
@@ -103,7 +105,7 @@ class MUSE(nn.Module):
 		mask = randm_perm < num_tokens_masked
 
 		# ignore the tokens that are not masked while computing loss
-		tgt = x.masked_fill(~mask, -1)
+		tgt = x.masked_fill(~mask, self.ignore_index)
 		# fill x with mask_id where mask is True
 		x = x.masked_fill(mask, self.mask_token_id)
 		return x, tgt
@@ -124,7 +126,7 @@ class MUSE(nn.Module):
 
 		# compute loss
 		logits = rearrange(logits, "b t c -> b c t")
-		loss = torch.nn.functional.cross_entropy(logits, tgt, ignore_index=-1)
+		loss = torch.nn.functional.cross_entropy(logits, tgt, ignore_index=self.ignore_index)
 		return loss
 
 	def generate(self, texts, timesteps = 18):
