@@ -5,6 +5,7 @@ import math
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
+from timm.scheduler.cosine_lr import CosineLRScheduler
 from torch.optim import Adam, AdamW
 from torch.autograd import Variable
 from accelerate import Accelerator
@@ -72,6 +73,12 @@ class VQGANTrainer(nn.Module):
 		warmup_steps = cfg.lr_scheduler.params.warmup_steps
 		beta1 = cfg.optimizer.params.beta1
 		beta2 = cfg.optimizer.params.beta2
+
+		# effetive_batch_size = cfg.dataset.params.batch_size * cfg.training.gradient_accumulation_steps
+		# num_iters_per_epoch = math.ceil(len(self.train_dl.dataset) / effetive_batch_size)
+		# total_iters = num_iters_per_epoch * cfg.training.num_epochs
+  
+		total_iters = cfg.training.num_epochs * len(self.train_dl)
 		
 		# disciminator
 		self.discr = NLayerDiscriminator(input_nc=3, ndf=64, n_layers=3)
@@ -80,10 +87,19 @@ class VQGANTrainer(nn.Module):
 		self.g_optim = Adam(self.vqvae.parameters(), lr=lr, betas=(beta1, beta2))
 		self.d_optim = Adam(self.discr.parameters(), lr=lr, betas=(beta1, beta2))
 		
-		# Scheduler
-		self.g_sched = get_cosine_schedule_with_warmup(self.g_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
-		self.d_sched = get_cosine_schedule_with_warmup(self.d_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
+		# # Scheduler
+		# self.g_sched = get_cosine_schedule_with_warmup(self.g_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
+		# self.d_sched = get_cosine_schedule_with_warmup(self.d_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
+  
+	
+		self.g_sched = CosineLRScheduler(self.g_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
+		self.d_sched = CosineLRScheduler(self.d_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
 
+		# self.g_sched = CosineLRScheduler(self.g_optim, t_initial=total_iters, lr_min=1e-5, warmup_t=warmup_steps, warmup_lr_init=1e-6, 
+		# 				cycle_limit=1, t_in_epochs=False, warmup_prefix=True) 
+  
+		# self.d_sched = CosineLRScheduler(self.g_optim, t_initial=total_iters, lr_min=1e-5, warmup_t=warmup_steps, warmup_lr_init=1e-6, 
+		# 				cycle_limit=1, t_in_epochs=False, warmup_prefix=True) 
 		
 		# define losses
 		self.per_loss = LPIPS(net='vgg').to(self.device).eval()
@@ -99,7 +115,8 @@ class VQGANTrainer(nn.Module):
 			self.g_optim,
 			self.d_optim,
 			self.g_sched,
-			self.d_sched
+			self.d_sched,
+			self.train_dl
 	
 		) = self.accelerator.prepare(
 			self.vqvae,
@@ -107,7 +124,8 @@ class VQGANTrainer(nn.Module):
 			self.g_optim,
 			self.d_optim,
 			self.g_sched,
-			self.d_sched
+			self.d_sched,
+			self.train_dl
 	 )
 		
 		# logging details
@@ -125,13 +143,11 @@ class VQGANTrainer(nn.Module):
 		os.makedirs(self.image_saved_dir, exist_ok=True)
 
 
-		logging.info(f"Train dataset size: {len(self.train_dl.dataset)}")
-		logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
+		# logging.info(f"Train dataset size: {len(self.train_dl.dataset)}")
+		# logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
 
-		effetive_batch_size = cfg.dataset.params.batch_size * cfg.training.gradient_accumulation_steps
-		num_iters_per_epoch = math.ceil(len(self.train_dl.dataset) / effetive_batch_size)
-		logging.info(f"Number of iterations per epoch: {num_iters_per_epoch}")
-		logging.info(f"Total training iterations: {self.num_epoch * num_iters_per_epoch}")
+		# logging.info(f"Number of iterations per epoch: {num_iters_per_epoch}")
+		# logging.info(f"Total training iterations: {total_iters}")
 		
 	
 	@property
@@ -185,7 +201,7 @@ class VQGANTrainer(nn.Module):
 						if self.accelerator.sync_gradients:
 							self.accelerator.clip_grad_norm_(self.discr.parameters(), self.max_grad_norm)
 						self.d_optim.step()
-						self.d_sched.step()
+						self.d_sched.step(self.global_step)
 						self.d_optim.zero_grad()
 						
 					
@@ -208,7 +224,7 @@ class VQGANTrainer(nn.Module):
 						if self.accelerator.sync_gradients:
 							self.accelerator.clip_grad_norm_(self.vqvae.parameters(), self.max_grad_norm)
 						self.g_optim.step()
-						self.g_sched.step()
+						self.g_sched.step(self.global_step)
 						self.g_optim.zero_grad()   
 
 				
@@ -223,7 +239,7 @@ class VQGANTrainer(nn.Module):
 						self.accelerator.log({"step": self.global_step, "lr": lr, 
 											"d_loss": d_loss, "g_loss": g_loss, 
 											"rec_loss": rec_loss, "per_loss": per_loss,
-											"codebook_loss": codebook_loss})
+											"codebook_loss": codebook_loss}, step=self.global_step)
 			
 					self.global_step += 1
 	  
