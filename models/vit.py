@@ -23,6 +23,8 @@ class ViT(nn.Module):
             nn.Linear(self.patch_dim, dim),
             nn.LayerNorm(dim))
 
+        
+        self.pre_norm = nn.LayerNorm(dim)
         self.final_fc = nn.Linear(dim, num_classes)
 
         self.class_token = nn.Parameter(torch.randn(dim))
@@ -43,6 +45,9 @@ class ViT(nn.Module):
 
         # add positional encoding
         x += self.pos_enc
+        
+        # pre norm
+        x = self.pre_norm(x)
 
         # transformer encoder
         x = self.encoder(x)
