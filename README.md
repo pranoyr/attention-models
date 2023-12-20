@@ -147,9 +147,9 @@ print(imgs.shape)
 ```
 
 
-## VQGAN, [[Code]](models/vqgan.py)
+## VQGAN
 
-Implementation of <a href="https://github.com/CompVis/taming-transformers">VQGAN</a>,
+Implementation of <a href="https://github.com/CompVis/taming-transformers">VQGAN</a>, [[Code]](models/vqgan.py)
 
 ```python
 import torch
