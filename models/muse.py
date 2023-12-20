@@ -4,7 +4,6 @@ import copy
 import torch.nn.functional as F
 from einops import rearrange, repeat, pack
 from models.multihead_attention import MultiHeadAttention
-from models.transformer import FeedForward, _get_clones
 import math
 from typing import List
 from models.t5 import T5Encoder, get_encoded_dim
