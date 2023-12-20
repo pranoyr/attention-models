@@ -16,7 +16,7 @@ Implementing some of the SOTA papers based on Transformers.
 
 ## Attention is All you Need
 
-Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all you need</a>,
+Implementation of <a href="https://arxiv.org/abs/1706.03762">Attention is all you need</a>, [[Code]](implementations/dcgan/dcgan.py)
 
 ```python
 import torch
