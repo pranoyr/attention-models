@@ -83,13 +83,13 @@ class VQGANTrainer(nn.Module):
 		self.g_optim = Adam(self.vqvae.parameters(), lr=lr, betas=(beta1, beta2))
 		self.d_optim = Adam(self.discr.parameters(), lr=lr, betas=(beta1, beta2))
 		
-		# # Scheduler
-		self.g_sched = get_cosine_schedule_with_warmup(self.g_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
-		self.d_sched = get_cosine_schedule_with_warmup(self.d_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
-  
+		# # # Scheduler
+		# self.g_sched = get_cosine_schedule_with_warmup(self.g_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
+		# self.d_sched = get_cosine_schedule_with_warmup(self.d_optim, warmup_steps, cfg.training.num_epochs * len(self.train_dl))
+		total_iters = cfg.training.num_epochs * len(self.train_dl)
 	
-		# self.g_sched = CosineLRScheduler(self.g_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
-		# self.d_sched = CosineLRScheduler(self.d_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
+		self.g_sched = CosineLRScheduler(self.g_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
+		self.d_sched = CosineLRScheduler(self.d_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
 
 		# self.g_sched = CosineLRScheduler(self.g_optim, t_initial=total_iters, lr_min=1e-5, warmup_t=warmup_steps, warmup_lr_init=1e-6, 
 		# 				cycle_limit=1, t_in_epochs=False, warmup_prefix=True) 
@@ -142,8 +142,6 @@ class VQGANTrainer(nn.Module):
 
 		logging.info(f"Train dataset size: {len(self.train_dl.dataset)}")
 		logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
-
-		total_iters = cfg.training.num_epochs * len(self.train_dl)
 		logging.info(f"Total training iterations: {total_iters}")
 		
 	
@@ -230,8 +228,9 @@ class VQGANTrainer(nn.Module):
 						self.evaluate()
 	  
 					if not (self.global_step % self.gradient_accumulation_steps):
-						lr = self.g_optim.param_groups[0]['lr']
-						self.accelerator.log({"step": self.global_step, "lr": lr, 
+						g_lr = self.g_optim.param_groups[0]["lr"]
+						d_lr = self.d_optim.param_groups[0]["lr"]
+						self.accelerator.log({"step": self.global_step, "g_lr": g_lr, "d_lr": d_lr,
 											"d_loss": d_loss, "g_loss": g_loss, 
 											"codebook_loss": codebook_loss, "l2loss": l2loss,
 											"l1loss": l1loss, "per_loss": per_loss})
