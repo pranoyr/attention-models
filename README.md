@@ -56,7 +56,7 @@ loss.backward()
 
 ## Multi Head Attention
 
-Paper, [Code](models/multihead_attention.py)
+[Code](models/multihead_attention.py)
 
 ```python
 import torch
