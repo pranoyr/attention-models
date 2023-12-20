@@ -56,7 +56,7 @@ loss.backward()
 
 ## Multi Head Attention
 
-Multi-Head Attention, [[Code]](models/multihead_attention.py)
+Paper, [Code](models/multihead_attention.py)
 
 ```python
 import torch
@@ -82,7 +82,7 @@ print(output.shape) # (b, timesteps, dim
 
 ## Vision Transformer
 
-<a href="https://arxiv.org/abs/2010.11929">Vision Transformer</a>, [[Code]](models/vit.py)
+<a href="https://arxiv.org/abs/2010.11929">Paper</a>, [Code](models/vit.py)
 
 ```python
 import torch
@@ -98,7 +98,7 @@ print(out.shape) # (b, num_classes)
 
 ## Parti
 
-<a href="https://sites.research.google/parti/">Parti</a>, [[Code]](models/parti.py)
+<a href="https://sites.research.google/parti/">Paper</a>, [Code](models/parti.py)
 
 ```python
 import torch
@@ -149,7 +149,7 @@ print(imgs.shape)
 
 ## VQGAN
 
-<a href="https://github.com/CompVis/taming-transformers">VQGAN</a>, [[Code]](models/vqgan.py)
+<a href="https://github.com/CompVis/taming-transformers">Paper</a>, [Code](models/vqgan.py)
 
 ```python
 import torch
@@ -172,7 +172,7 @@ print(imgs.shape)
 
 ## MaskGIT
 
-<a href="https://arxiv.org/pdf/2202.04200.pdf">MaskGIT</a>, [[Code]](models/maskgit.py)
+<a href="https://arxiv.org/pdf/2202.04200.pdf">Paper</a>, [Code](models/maskgit.py)
 
 ```python
 from torch import nn
@@ -205,7 +205,7 @@ loss.backward()
 
 ## MUSE
 
-<a href="https://arxiv.org/pdf/2301.00704.pdf">MUSE</a>, [[Code]](models/muse.py)
+<a href="https://arxiv.org/pdf/2301.00704.pdf">Paper</a>, [Code](models/muse.py)
 
 ```python
 from torch import nn
@@ -250,7 +250,7 @@ imgs = muse.generate(texts)
 
 ## ViTVQGAN
 
-<a href="https://arxiv.org/pdf/2110.04627.pdf">ViTVQGAN</a>, [[Code]](models/vitvqgan.py)
+<a href="https://arxiv.org/pdf/2110.04627.pdf">Paper</a>, [Code](models/vitvqgan.py)
 
 ```python
 import torch
