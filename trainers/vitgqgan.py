@@ -179,24 +179,6 @@ class VQGANTrainer(nn.Module):
 					imgs, anns = batch
 					imgs = imgs.to(self.device)
 
-					# discriminator 
-					with self.accelerator.accumulate(self.discr):
-						with self.accelerator.autocast():
-							rec, codebook_loss = self.vqvae(imgs)
-		
-							fake_pred = self.discr(rec)
-							real_pred = self.discr(imgs)
-							
-							gp = self.calculate_gradient_penalty(imgs, rec)
-							d_loss = self.d_loss(fake_pred, real_pred) + gp
-							
-						self.accelerator.backward(d_loss)
-						if self.accelerator.sync_gradients:
-							self.accelerator.clip_grad_norm_(self.discr.parameters(), self.max_grad_norm)
-						self.d_optim.step()
-						self.d_sched.step(self.global_step)
-						self.d_optim.zero_grad()
-						
 					
 					# generator 
 					with self.accelerator.accumulate(self.vqvae):
@@ -212,13 +194,34 @@ class VQGANTrainer(nn.Module):
 							# final loss
 							loss = codebook_loss + l2loss + l1loss + self.p_weight * per_loss + self.d_weight * g_loss
 						
+						self.g_optim.zero_grad()   
 						self.accelerator.backward(loss)
 						if self.accelerator.sync_gradients:
 							self.accelerator.clip_grad_norm_(self.vqvae.parameters(), self.max_grad_norm)
 						self.g_optim.step()
 						self.g_sched.step(self.global_step)
-						self.g_optim.zero_grad()   
+						
 
+
+					# discriminator 
+					with self.accelerator.accumulate(self.discr):
+						with self.accelerator.autocast():
+							rec, codebook_loss = self.vqvae(imgs)
+		
+							fake_pred = self.discr(rec)
+							real_pred = self.discr(imgs)
+							
+							gp = self.calculate_gradient_penalty(imgs, rec)
+							d_loss = self.d_loss(fake_pred, real_pred) + gp
+						
+						self.d_optim.zero_grad()
+						self.accelerator.backward(d_loss)
+						if self.accelerator.sync_gradients:
+							self.accelerator.clip_grad_norm_(self.discr.parameters(), self.max_grad_norm)
+						self.d_optim.step()
+						self.d_sched.step(self.global_step)
+						
+						
 				
 					if not (self.global_step % self.save_every):
 						self.save_ckpt(rewrite=True)
