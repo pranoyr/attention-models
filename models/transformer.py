@@ -5,11 +5,7 @@ import copy
 import torch.nn.functional as F
 from models.positional_encoding import PositionalEncoding
 from einops import rearrange, repeat, pack
-
-
-def _get_clones(block, N=6) -> nn.ModuleList:
-	block_stack = nn.ModuleList([copy.deepcopy(block) for _ in range(N)])
-	return block_stack
+import torch.nn as nn
 
 
 class LayerNorm(nn.Module):
@@ -53,10 +49,9 @@ class FeedForward(nn.Module):
 class Encoder(nn.Module):
 	def __init__(self, dim, n_heads, d_head, depth, dropout=0.):
 		super().__init__()
-
-		encoder_layer = EncoderLayer(dim, n_heads, d_head, dropout)
-		self.layers = _get_clones(encoder_layer, depth)
-
+	
+		self.layers = nn.ModuleList([EncoderLayer(dim, n_heads, d_head, dropout) for _ in range(depth)])
+ 
 	def forward(self, x, context_mask=None):
 		for layer in self.layers:
 			x = layer(x, context_mask=context_mask)
@@ -93,8 +88,7 @@ class Decoder(nn.Module):
 	def __init__(self, dim, n_heads, d_head, depth, dropout=0.):
 		super().__init__()
 
-		decoder_layer = DecoderLayer(dim, n_heads, d_head, dropout)
-		self.layers = _get_clones(decoder_layer, depth)
+		self.layers = nn.ModuleList([DecoderLayer(dim, n_heads, d_head, dropout) for _ in range(depth)])
 
 	def forward(self, dec_in, context, context_mask=None, causal_mask=None):
 		# input to the decoder is the previous dec output
