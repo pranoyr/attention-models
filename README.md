@@ -56,7 +56,7 @@ loss.backward()
 
 ## Multi Head Attention
 
-Implementation of Multi-Head Attention
+Implementation of Multi-Head Attention, [[Code]](models/multihead_attention.py)
 
 ```python
 import torch
@@ -82,7 +82,7 @@ print(output.shape) # (b, timesteps, dim
 
 ## Vision Transformer
 
-Implementation of <a href="https://arxiv.org/abs/2010.11929">Vision Transformer</a>,
+Implementation of <a href="https://arxiv.org/abs/2010.11929">Vision Transformer</a>, [[Code]](models/vit.py)
 
 ```python
 import torch
@@ -98,7 +98,7 @@ print(out.shape) # (b, num_classes)
 
 ## Parti
 
-Implementation of <a href="https://sites.research.google/parti/">Parti</a>,
+Implementation of <a href="https://sites.research.google/parti/">Parti</a>, [[Code]](models/parti.py)
 
 ```python
 import torch
@@ -147,7 +147,7 @@ print(imgs.shape)
 ```
 
 
-## VQGAN
+## VQGAN, [[Code]](models/vqgan.py)
 
 Implementation of <a href="https://github.com/CompVis/taming-transformers">VQGAN</a>,
 
@@ -172,7 +172,7 @@ print(imgs.shape)
 
 ## MaskGIT
 
-Implementation of <a href="https://arxiv.org/pdf/2202.04200.pdf">MaskGIT</a>,
+Implementation of <a href="https://arxiv.org/pdf/2202.04200.pdf">MaskGIT</a>, [[Code]](models/maskgit.py)
 
 ```python
 from torch import nn
@@ -205,7 +205,7 @@ loss.backward()
 
 ## MUSE
 
-Implementation of <a href="https://arxiv.org/pdf/2301.00704.pdf">MUSE</a>,
+Implementation of <a href="https://arxiv.org/pdf/2301.00704.pdf">MUSE</a>, [[Code]](models/muse.py)
 
 ```python
 from torch import nn
@@ -250,7 +250,7 @@ imgs = muse.generate(texts)
 
 ## ViTVQGAN
 
-Implementation of <a href="https://arxiv.org/pdf/2110.04627.pdf">ViTVQGAN</a>,
+Implementation of <a href="https://arxiv.org/pdf/2110.04627.pdf">ViTVQGAN</a>, [[Code]](models/vitvqgan.py)
 
 ```python
 import torch
