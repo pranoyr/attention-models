@@ -25,6 +25,7 @@ model:
         d_head : 64
         depth : 8
         dropout : 0.1
+        mlp_dim: 2048
 
 
 dataset:
