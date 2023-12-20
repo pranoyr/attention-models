@@ -149,7 +149,7 @@ print(imgs.shape)
 
 ## VQGAN
 
-<a href="https://github.com/CompVis/taming-transformers">Paper</a>, [Code](models/vqgan.py)
+<a href="https://compvis.github.io/taming-transformers">Paper</a>, [Code](models/vqgan.py)
 
 ```python
 import torch
