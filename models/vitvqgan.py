@@ -27,18 +27,6 @@ class FeedForward(nn.Module):
 		return self.net(x)
 
 
-class TransformerBlock(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth, mlp_dim, dropout=0.):
-		super().__init__()
-  
-		self.layers = nn.ModuleList([EncoderLayer(dim, n_heads, d_head, mlp_dim, dropout) for _ in range(depth)])
- 
-	def forward(self, x, context_mask=None):
-		for layer in self.layers:
-			x = layer(x, context_mask=context_mask)
-		return x
-
-
 class EncoderLayer(nn.Module):
 	def __init__(self, dim, n_heads, d_head, mlp_dim, dropout):
 		super().__init__()
@@ -63,6 +51,19 @@ class EncoderLayer(nn.Module):
 		# ADD
 		x = fc_out + x
 		return x
+
+
+class TransformerBlock(nn.Module):
+	def __init__(self, dim, n_heads, d_head, depth, mlp_dim, dropout=0.):
+		super().__init__()
+  
+		self.layers = nn.ModuleList([EncoderLayer(dim, n_heads, d_head, mlp_dim, dropout) for _ in range(depth)])
+ 
+	def forward(self, x, context_mask=None):
+		for layer in self.layers:
+			x = layer(x, context_mask=context_mask)
+		return x
+
 
 
 class ViTEncoder(nn.Module):
