@@ -16,7 +16,7 @@ Implementing some of the SOTA papers based on Transformers.
 
 ## Attention is All you Need
 
-<a href="https://arxiv.org/abs/1706.03762">Attention is all you need</a>, [Code](models/transformer.py)
+<a href="https://arxiv.org/abs/1706.03762">Paper</a>, [Code](models/transformer.py)
 
 ```python
 import torch
