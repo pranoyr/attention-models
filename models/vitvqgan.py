@@ -175,6 +175,7 @@ class Codebook(nn.Module):
 
 	def indices_to_embeddings(self, indices):
 		embeds = self.embedding(indices)
+		embeds = l2_norm(embeds)
 		return embeds
 
 
@@ -197,7 +198,7 @@ class ViTVQGAN(nn.Module):
 		out = self.decoder(embeds)
 		return out, loss
 	
-	def xz(self, indices):
+	def decode_indices(self, indices):
 		embeds = self.codebook.indices_to_embeddings(indices)
 		embeds = self.post_quant(embeds)
 		imgs = self.decoder(embeds)
