@@ -197,7 +197,7 @@ class ViTVQGAN(nn.Module):
 		out = self.decoder(embeds)
 		return out, loss
 	
-	def decode_indices(self, indices):
+	def xz(self, indices):
 		embeds = self.codebook.indices_to_embeddings(indices)
 		embeds = self.post_quant(embeds)
 		imgs = self.decoder(embeds)
