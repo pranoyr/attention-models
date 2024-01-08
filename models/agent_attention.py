@@ -53,9 +53,6 @@ class AgentAttention(nn.Module):
 		# Agent Aggregation
 
 		attn_scores = einsum('b h i d, b h j d -> b h i j', agent_tokens * self.scale, k)
-  
-		if exists(causal_mask):
-			attn_scores = attn_scores.masked_fill(causal_mask, -1e9)
    
 		attn_probs = torch.softmax(attn_scores, dim=-1)
    
@@ -66,8 +63,6 @@ class AgentAttention(nn.Module):
 
 		attn_scores = einsum('b h i d, b h j d -> b h i j', q * self.scale, agent_tokens)
   
-		if exists(causal_mask):
-			attn_scores = attn_scores.masked_fill(causal_mask, -1e9)
 		attn_probs = torch.softmax(attn_scores, dim=-1)
 
 		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v_agent)
