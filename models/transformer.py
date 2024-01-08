@@ -1,4 +1,4 @@
-from models.multihead_attention import MultiHeadAttention
+from models.softmax_attention import SoftmaxAttention
 import torch.nn as nn
 import torch
 import copy
@@ -62,7 +62,7 @@ class EncoderLayer(nn.Module):
 	def __init__(self, dim, n_heads, d_head, dropout):
 		super().__init__()
 
-		self.self_attn = MultiHeadAttention(dim, n_heads, d_head, dropout)
+		self.self_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
 		self.feed_forward = FeedForward(dim)
 		self.norm1 = nn.LayerNorm(dim)
 		self.norm2 = nn.LayerNorm(dim)
@@ -103,8 +103,8 @@ class DecoderLayer(nn.Module):
 	def __init__(self, dim, n_heads, d_head, dropout):
 		super().__init__()
 
-		self.self_attn = MultiHeadAttention(dim, n_heads, d_head, dropout)
-		self.cross_attn = MultiHeadAttention(dim, n_heads, d_head, dropout)
+		self.self_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
+		self.cross_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
 		
 		self.feed_forward = FeedForward(dim)
 		self.norm1 = nn.LayerNorm(dim)

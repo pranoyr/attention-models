@@ -3,7 +3,7 @@ import torch
 import copy
 import torch.nn.functional as F
 from einops import rearrange, repeat, pack
-from models.multihead_attention import MultiHeadAttention
+from models.softmax_attention import SoftmaxAttention
 import math
 from typing import List
 from models.t5 import T5Encoder, get_encoded_dim
@@ -184,5 +184,3 @@ class MUSE(nn.Module):
 
 		imgs = self.vq.decode_indices(ids)
 		return imgs
-		
-
