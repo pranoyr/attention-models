@@ -4,7 +4,7 @@ Implementing some of the SOTA papers based on Transformers.
 
 ## Table of Contents
   * [Attention is All you Need](#attention-is-all-you-need) (Transformer)
-  * [Multi Head Attention](#multi-head-attention) 
+  * [Softmax Attention](#softmax-attention) 
   * [Vision Transformer](#vision-transformer) (Image Classification Transformer)
   * [Vector Quantised GAN](#vqgan) (VQGAN)
   * [Parti](#parti) (Google's text to image)
@@ -54,15 +54,15 @@ loss = torch.nn.functional.cross_entropy(out, tgt_seq, ignore_index=0)
 loss.backward()
 ```
 
-## Multi Head Attention
+## Softmax Attention
 
-[Code](models/multihead_attention.py)
+[Code](models/softmax_attention.py)
 
 ```python
 import torch
-from models import MultiHeadAttention
+from models import SoftmaxAttention
 
-attention = MultiHeadAttention(dim=512, num_heads=16, dim_head=64)
+attention = SoftmaxAttention(dim=512, num_heads=16, dim_head=64)
 	
 q = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
 k = torch.randn(2, 10, 512)  # (b, timesteps_k, dim)

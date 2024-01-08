@@ -18,9 +18,9 @@ from torch import einsum
 def exists(val):
 	return val is not None
 
-class MultiHeadAttention(nn.Module):
+class SoftmaxAttention(nn.Module):
 	def __init__(self, dim, num_heads=8, dim_head=64, dropout=0.0):
-		super(MultiHeadAttention, self).__init__()
+		super(SoftmaxAttention, self).__init__()
 
 		self.dim = dim
 		self.num_heads = num_heads
