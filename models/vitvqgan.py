@@ -40,7 +40,7 @@ class EncoderLayer(nn.Module):
 	def forward(self, x, context_mask=None):
 		x_norm = self.norm1(x)
 		# self attention
-		attn_out = self.self_attn(q=x_norm, k=x_norm, v=x_norm, context_mask=context_mask)
+		attn_out = self.self_attn(x, context_mask=context_mask)
 
 		# ADD & NORM
 		x = attn_out + x
