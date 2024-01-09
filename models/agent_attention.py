@@ -40,6 +40,11 @@ class AgentAttention(nn.Module):
 		self.W_o = nn.Linear(num_heads * dim_head, dim)
 		self.dropout = nn.Dropout(dropout)
 
+
+		self.dwc = nn.Sequential(Rearrange('b h t d -> b d h t'), 
+						   		nn.Conv2d(dim_head, dim_head, kernel_size=3, padding=1, groups=dim_head),
+						  	 	Rearrange('b d h t -> b h t d'))
+
 	def forward(self, x, causal_mask=None, context_mask=None):
 		
 		qkv = self.qkv(x)
@@ -65,11 +70,12 @@ class AgentAttention(nn.Module):
   
 		attn_probs = torch.softmax(attn_scores, dim=-1)
 
-		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v_agent)
-  
+		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v_agent) + self.dwc(v)
+	
 		# combine 
 		output = rearrange(output, 'b h t d -> b t (h d)')
 		output = self.W_o(output)
 		output = self.dropout(output)
    
 		return output
+	
