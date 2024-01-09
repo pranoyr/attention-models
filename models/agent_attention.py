@@ -9,11 +9,7 @@ from einops.layers.torch import Rearrange
 # h - number of heads (num_heads)
 # d - dimension of each head (dim_head)
 # b - batch size
-
 # t - number of timesteps of Q,K,V
-# When Q,K have different lengths
-# i - number of timesteps for Q
-# j - number of timesteps for K
 
 
 
