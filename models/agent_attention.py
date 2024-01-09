@@ -46,7 +46,7 @@ class AgentAttention(nn.Module):
 						   		nn.Conv2d(dim_head, dim_head, kernel_size=3, padding=1, groups=dim_head),
 						  	 	Rearrange('b d h t -> b h t d'))
 
-	def forward(self, x, causal_mask=None, context_mask=None):
+	def forward(self, x, context_mask=None):
 		
 		qkv = self.qkv(x)
 
