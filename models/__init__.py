@@ -2,6 +2,7 @@ from .transformer import Transformer
 from .vqgan import VQGAN
 from .vit import ViT
 from .softmax_attention import SoftmaxAttention
+from .agent_attention import AgentAttention
 from .parti import Parti
 from .maskgit import MaskGitTransformer
 from .muse import MUSE

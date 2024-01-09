@@ -5,6 +5,7 @@ Implementing some of the SOTA papers based on Transformers.
 ## Table of Contents
   * [Attention is All you Need](#attention-is-all-you-need) (Transformer)
   * [Softmax Attention](#softmax-attention) 
+  * [Agent Attention](#agent-attention) 
   * [Vision Transformer](#vision-transformer) (Image Classification Transformer)
   * [Vector Quantised GAN](#vqgan) (VQGAN)
   * [Parti](#parti) (Google's text to image)
@@ -77,6 +78,22 @@ print(output.shape) # (b, timesteps, dim
 
 ```
 
+## Agent Attention
+
+[Code](models/agent_attention.py)
+
+```python
+import torch
+from models import AgentAttention
+
+attention = AgentAttention(dim=512, num_heads=16, dim_head=64)
+	
+x = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
+
+output = attention(x)
+print(output.shape) # (b, timesteps, dim)
+
+```
 
 
 
