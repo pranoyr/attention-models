@@ -3,6 +3,7 @@ import torch.nn as nn
 import math
 from einops import rearrange
 from torch import einsum
+from einops.layers.torch import Rearrange
 
 
 # h - number of heads (num_heads)
