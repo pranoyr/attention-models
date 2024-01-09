@@ -37,7 +37,7 @@ class AgentAttention(nn.Module):
 		self.W_o = nn.Linear(num_heads * dim_head, dim)
 		self.dropout = nn.Dropout(dropout)
 
-
+		self.bias1 = nn.Parameter(torch.zeros(1, 1, 1, 1))
 		self.dwc = nn.Sequential(Rearrange('b h t d -> b d h t'), 
 						   		nn.Conv2d(dim_head, dim_head, kernel_size=3, padding=1, groups=dim_head),
 						  	 	Rearrange('b d h t -> b h t d'))
@@ -54,7 +54,8 @@ class AgentAttention(nn.Module):
   
 		# Agent Aggregation
 
-		attn_scores = einsum('b h i d, b h j d -> b h i j', agent_tokens * self.scale, k)
+		k_transpose = rearrange(k, 'b h t d -> b h d t')
+		attn_scores = einsum('b h i d, b h d j -> b h i j', agent_tokens * self.scale, k_transpose)
    
 		attn_probs = torch.softmax(attn_scores, dim=-1)
    
@@ -63,7 +64,8 @@ class AgentAttention(nn.Module):
 
 		# Agent Broadcast
 
-		attn_scores = einsum('b h i d, b h j d -> b h i j', q * self.scale, agent_tokens)
+		agent_tokens_t = rearrange(agent_tokens, 'b h t d -> b h d t')
+		attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, agent_tokens_t)
   
 		attn_probs = torch.softmax(attn_scores, dim=-1)
 
@@ -75,4 +77,3 @@ class AgentAttention(nn.Module):
 		output = self.dropout(output)
    
 		return output
-	
