@@ -8,6 +8,7 @@ import torch.nn.functional as F
 from einops import rearrange, repeat, pack
 from einops.layers.torch import Rearrange
 from models.softmax_attention import SoftmaxAttention
+from models.agent_attention import AgentAttention
 
 
 def l2_norm(x):
@@ -31,7 +32,7 @@ class EncoderLayer(nn.Module):
 	def __init__(self, dim, n_heads, d_head, mlp_dim, dropout):
 		super().__init__()
 
-		self.self_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
+		self.self_attn = AgentAttention(dim, n_heads, d_head, dropout)
 		self.feed_forward = FeedForward(dim, mlp_dim)
 		self.norm1 = nn.LayerNorm(dim)
 		self.norm2 = nn.LayerNorm(dim)
