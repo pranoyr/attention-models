@@ -80,7 +80,7 @@ print(output.shape) # (b, timesteps, dim
 
 ## Agent Attention
 
-[Code](models/agent_attention.py)
+<a href="https://arxiv.org/abs/2312.08874">Paper</a>, [Code](models/vit.py)[Code](models/agent_attention.py)
 
 ```python
 import torch
