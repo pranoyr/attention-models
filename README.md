@@ -86,9 +86,9 @@ print(output.shape) # (b, timesteps, dim
 import torch
 from models import AgentAttention
 
-attention = AgentAttention(dim=512, num_heads=16, dim_head=64)
+attention = AgentAttention(dim=384, num_heads=6, dim_head=64)
 	
-x = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
+x = torch.randn(2, 10, 384)  # (b, timesteps_q, dim)
 
 output = attention(x)
 print(output.shape) # (b, timesteps, dim)
