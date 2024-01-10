@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import math
-from einops import rearrange
+from einops import rearrange, unpack
 from torch import einsum
 from einops.layers.torch import Rearrange
+import torch.nn.functional as F
 
 
 # h - number of heads (num_heads)
@@ -33,7 +34,7 @@ class AgentAttention(nn.Module):
 		self.scale = dim_head ** -0.5
 
 		pool_size = int(agent_num ** 0.5)
-		self.pool = nn.AdaptiveAvgPool2d((pool_size, dim_head))
+		self.pool = nn.AdaptiveAvgPool2d((pool_size, pool_size))
   
 		self.W_o = nn.Linear(num_heads * dim_head, dim)
 		self.dropout = nn.Dropout(dropout)
@@ -46,15 +47,15 @@ class AgentAttention(nn.Module):
 		
 
 	def forward(self, x, context_mask=None):
-		
+
 		qkv = self.qkv(x)
 
-		qkv = rearrange(qkv, 'b t (qkv h d) -> qkv b h t d', d = self.dim_head, h = self.num_heads)
-		q , k , v = qkv[0], qkv[1], qkv[2]
+		q, k, v = rearrange(qkv, 'b t (qkv h d) -> qkv b h t d', d = self.dim_head, h = self.num_heads)
 		
-		# pooling the queries to get agent tokens
-		agent_tokens = self.pool(q)
-  
+		# pooling the queries to get agent tokens, pool (t,h)
+		agent_tokens  = self.pool(q.permute(0, 3, 2, 1))
+		agent_tokens = rearrange(agent_tokens, 'b d t h -> b h t d')
+		
 		# Agent Aggregation
 
 		k_transpose = rearrange(k, 'b h t d -> b h d t')
