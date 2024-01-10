@@ -53,13 +53,11 @@ class AgentAttention(nn.Module):
 		q, k, v = rearrange(qkv, 'b t (qkv h d) -> qkv b h t d', d = self.dim_head, h = self.num_heads)
 		
 		# pooling the queries to get agent tokens, pool (t,h)
-		agent_tokens  = self.pool(q.permute(0, 3, 2, 1))
-		agent_tokens = rearrange(agent_tokens, 'b d t h -> b h t d')
+		agent_tokens  = self.pool(q.permute(0, 3, 2, 1)).permute(0, 3, 2, 1)
 		
 		# Agent Aggregation
 
-		k_transpose = rearrange(k, 'b h t d -> b h d t')
-		attn_scores = einsum('b h i d, b h d j -> b h i j', agent_tokens * self.scale, k_transpose) + self.bias1
+		attn_scores = einsum('b h i d, b h d j -> b h i j', agent_tokens * self.scale, k.transpose(-1, -2)) + self.bias1
    
 		attn_probs = torch.softmax(attn_scores, dim=-1)
    
@@ -68,8 +66,7 @@ class AgentAttention(nn.Module):
 
 		# Agent Broadcast
 
-		agent_tokens_t = rearrange(agent_tokens, 'b h t d -> b h d t')
-		attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, agent_tokens_t) + self.bias2
+		attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, agent_tokens.transpose(-1, -2)) + self.bias2
   
 		attn_probs = torch.softmax(attn_scores, dim=-1)
 
