@@ -48,8 +48,6 @@ class AgentAttention(nn.Module):
 
 	def forward(self, x, context_mask=None):
 
-		
-
 		qkv = self.qkv(x)
 
 		q, k, v = rearrange(qkv, 'b t (qkv h d) -> qkv b h t d', d = self.dim_head, h = self.num_heads)
