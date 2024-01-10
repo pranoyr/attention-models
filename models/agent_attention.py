@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from einops import rearrange
+from einops import rearrange, unpack
 from torch import einsum
 from einops.layers.torch import Rearrange
 
@@ -46,11 +46,14 @@ class AgentAttention(nn.Module):
 		
 
 	def forward(self, x, context_mask=None):
-		
+
+		b, n, c = x.shape
+		h = int(n ** 0.5)
+		w = int(n ** 0.5)
+
 		qkv = self.qkv(x)
 
-		qkv = rearrange(qkv, 'b t (qkv h d) -> qkv b h t d', d = self.dim_head, h = self.num_heads)
-		q , k , v = qkv[0], qkv[1], qkv[2]
+		q, k, v = rearrange(qkv, 'b t (qkv h d) -> qkv b h t d', d = self.dim_head, h = self.num_heads)
 		
 		# pooling the queries to get agent tokens
 		agent_tokens = self.pool(q)
