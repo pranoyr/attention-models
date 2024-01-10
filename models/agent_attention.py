@@ -13,11 +13,9 @@ import torch.nn.functional as F
 # t - number of timesteps of Q,K,V
 
 
-
 # helper function
 def exists(val):
 	return val is not None
-
 
 
 class AgentAttention(nn.Module):
@@ -38,6 +36,8 @@ class AgentAttention(nn.Module):
   
 		self.W_o = nn.Linear(num_heads * dim_head, dim)
 		self.dropout = nn.Dropout(dropout)
+
+		# TODO  - replace bias with correct implementation
 
 		self.bias1 = nn.Parameter(torch.zeros(1, 1, 1, 1))
 		self.bias2 = nn.Parameter(torch.zeros(1, 1, 1, 1))
