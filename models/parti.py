@@ -38,7 +38,8 @@ class TextEncoder(torch.nn.Module):
 		context_mask, text_embeds = self.t5_encoder(texts)
 		text_embeds = self.text_embed_proj(text_embeds)
 		return context_mask, text_embeds
-		
+
+# TODO: add classifier free guidance	
 
 class Parti(nn.Module):
 	def __init__(
