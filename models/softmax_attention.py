@@ -3,6 +3,7 @@ import torch.nn as nn
 import math
 from einops import rearrange
 from torch import einsum
+from einops.layers.torch import Rearrange
 
 
 # h - number of heads (num_heads)
@@ -26,33 +27,42 @@ class SoftmaxAttention(nn.Module):
 		self.num_heads = num_heads
 		self.dim_head = dim_head
 
-		self.W_q = nn.Linear(dim, num_heads * dim_head)
-		self.W_k = nn.Linear(dim, num_heads * dim_head)
-		self.W_v = nn.Linear(dim, num_heads * dim_head)
+
+		self.q = nn.Linear(dim, num_heads * dim_head, bias=False)
+
+		self.q = nn.Sequential(
+			nn.Linear(dim, num_heads * dim_head, bias=False),
+			nn.Dropout(dropout),
+			Rearrange('b t (h d) -> b h t d', h=self.num_heads)
+		)
+
+		self.kv = nn.Sequential(
+			nn.Linear(dim, 2 * num_heads * dim_head, bias=False),
+			nn.Dropout(dropout),
+			Rearrange('b t (kv h d) -> kv b h t d', d = self.dim_head, h = self.num_heads)
+		)
+
 		self.W_o = nn.Linear(num_heads * dim_head, dim)
+
 		self.dropout = nn.Dropout(dropout)
 
 		self.scale = dim_head ** -0.5
 
-	def forward(self, q, k, v, causal_mask=None, context_mask=None):
+	def forward(self, x, context=None, causal_mask=None, context_mask=None):
 
 		# prepare Q, K, V for attention
-		# Q,K,V - (b_size, n_timesteps, n_heads * dk)
-		q = self.W_q(q)
-		k = self.W_k(k)
-		v = self.W_v(v)
 
-		# split Q, K, V into multiple heads
-		# (b, t, h * d) -> (b, h, t, d)
-		q = rearrange(q, 'b t (h d) -> b h t d', h=self.num_heads)
-		k = rearrange(k, 'b t (h d) -> b h t d', h=self.num_heads)
-		v = rearrange(v, 'b t (h d) -> b h t d', h=self.num_heads)
+		q = self.q(x)
 
+		if exists(context):
+			k, v = self.kv(context)
+		else:
+			k, v = self.kv(x)
+		
 		# compute attention scores
 		# Attention Scores = Q * K^T / sqrt(d_k)
 		#  Q(b, h, t, d) * K(b, h, d, t) ->  (b, h, t, t)
-		k_transpose = rearrange(k, 'b h t d -> b h d t')
-		attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, k_transpose)
+		attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, k.transpose(-1, -2))
 		
 		# context mask used in Cross-Attention (encoder-decoder) and Self-Attention (encoder)
 		if exists(context_mask):

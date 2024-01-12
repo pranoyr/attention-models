@@ -36,10 +36,10 @@ class EncoderLayer(nn.Module):
 		self.norm1 = nn.LayerNorm(dim)
 		self.norm2 = nn.LayerNorm(dim)
 		
-	def forward(self, x, context_mask=None):
+	def forward(self, x):
 		x_norm = self.norm1(x)
 		# self attention
-		attn_out = self.self_attn(q=x_norm, k=x_norm, v=x_norm, context_mask=context_mask)
+		attn_out = self.self_attn(x=x_norm)
 
 		# ADD & NORM
 		x = attn_out + x
@@ -59,9 +59,9 @@ class TransformerBlock(nn.Module):
   
 		self.layers = nn.ModuleList([EncoderLayer(dim, n_heads, d_head, mlp_dim, dropout) for _ in range(depth)])
  
-	def forward(self, x, context_mask=None):
+	def forward(self, x):
 		for layer in self.layers:
-			x = layer(x, context_mask=context_mask)
+			x = layer(x)
 		return x
 
 
