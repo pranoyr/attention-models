@@ -65,15 +65,13 @@ from models import SoftmaxAttention
 
 attention = SoftmaxAttention(dim=512, num_heads=16, dim_head=64)
 	
-q = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
-k = torch.randn(2, 10, 512)  # (b, timesteps_k, dim)
-v = torch.randn(2, 10, 512)  # (b, timesteps_v, dim)
+x = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
 
 # causal mask used in Masked Multi-Head Attention
-i, j = q.shape[1], k.shape[1]
+i, j = x.shape[1], x.shape[1]
 mask = torch.ones((i, j), dtype=torch.bool).triu(j - i + 1)
 
-output = attention(q, k, v, causal_mask=mask)
+output = attention(x, causal_mask=mask)
 print(output.shape) # (b, timesteps, dim
 
 ```
