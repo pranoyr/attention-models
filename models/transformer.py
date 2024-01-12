@@ -189,7 +189,7 @@ class Transformer(nn.Module):
 			dec_in = self.dec_input_proj(out_seq)
 			dec_in = self.pos_enc(dec_in)
 			dec_out = self.decoder(dec_in=dec_in, context=context)
-			output = self.linear(dec_out)
+			logits = self.linear(dec_out)
 			# sample
 			last_token = F.gumbel_softmax(logits[:, -1, :], tau=1, hard=False)
 			last_token = torch.argmax(last_token, dim=-1)
