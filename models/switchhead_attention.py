@@ -34,9 +34,7 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t (kv h d) -> kv b h t d', d = self.dim_head, h = self.num_heads)
 		)
 
-	
-		output_dim =  dim_head * (dim / (dim_head * num_heads))
-		self.W_o = nn.ModuleList([nn.Linear(dim_head, int(output_dim)) for _ in range(num_heads)])
+		self.W_o = nn.ModuleList([nn.Linear(dim_head, dim) for _ in range(num_heads)])
 
 		self.dropout = nn.Dropout(dropout)
 
@@ -74,7 +72,6 @@ class SwitchHeadAttention(nn.Module):
 
 		output = [w(head) for w, head in zip(self.W_o, output)]
 
-		# combine heads
-		output = rearrange(output, 'h b t d -> b t (h d)')
-
+		output = torch.stack(output, dim=2).sum(dim=2)
+	
 		return output
