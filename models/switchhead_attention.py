@@ -48,7 +48,7 @@ class SwitchHeadAttention(nn.Module):
 
 		s = torch.sigmoid(self.W_s(x))
 
-		eps = s.topk(k=3, dim=2)[1] 
+		eps = s.topk(k=3, dim=2).indices
 
 		scores = torch.zeros_like(s)
 		scores.scatter_(2, eps, s)
