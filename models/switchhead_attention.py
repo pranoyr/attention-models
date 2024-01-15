@@ -48,11 +48,10 @@ class SwitchHeadAttention(nn.Module):
 
 		scores = torch.sigmoid(self.W_s(x))
 		
-		eps = scores.topk(1, dim=2)[1] + 1
-		inds = torch.arange(scores.size(2)).view(1, 1, -1)
-		scores = scores.masked_fill(inds < eps, 0)
+		eps = scores.topk(k=3, dim=2)[1] 
 
-		
+		scores.scatter_(2, eps, 0)
+
 		scores = repeat(scores, 'b t s -> b t s d', d = self.dim)
 		scores = rearrange(scores, 'b t s d -> s b t d')
 		
@@ -63,6 +62,9 @@ class SwitchHeadAttention(nn.Module):
 		else:
 			k, v = self.kv(x)
 		
+		# compute attention scores
+		# Attention Scores = Q * K^T / sqrt(d_k)
+		#  Q(b, h, t, d) * K(b, h, d, t) ->  (b, h, t, t)
 		attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, k.transpose(-1, -2))
 		
 		# context mask used in Cross-Attention (encoder-decoder) and Self-Attention (encoder)
