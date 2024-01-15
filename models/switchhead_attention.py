@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from einops import rearrange
+from einops import rearrange, reduce, repeat
 from torch import einsum
 from einops.layers.torch import Rearrange
 
@@ -9,6 +9,7 @@ from einops.layers.torch import Rearrange
 # helper function
 def exists(val):
 	return val is not None
+
 
 
 class SwitchHeadAttention(nn.Module):
@@ -34,6 +35,9 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t (kv h d) -> kv b h t d', d = self.dim_head, h = self.num_heads)
 		)
 
+
+		self.W_s = nn.Linear(dim, num_heads, bias=False)
+	
 		self.W_o = nn.ModuleList([nn.Linear(dim_head, dim) for _ in range(num_heads)])
 
 		self.dropout = nn.Dropout(dropout)
@@ -42,8 +46,16 @@ class SwitchHeadAttention(nn.Module):
 
 	def forward(self, x, context=None, causal_mask=None, context_mask=None):
 
-		# prepare Q, K, V for attention
+		scores = torch.sigmoid(self.W_s(x))
+		
+		eps = scores.topk(1, dim=2)[1] + 1
+		inds = torch.arange(scores.size(2)).view(1, 1, -1)
+		scores = scores.masked_fill(inds < eps, 0)
 
+		
+		scores = repeat(scores, 'b t s -> b t s d', d = self.dim)
+		scores = rearrange(scores, 'b t s d -> s b t d')
+		
 		q = self.q(x)
 
 		if exists(context):
@@ -51,9 +63,6 @@ class SwitchHeadAttention(nn.Module):
 		else:
 			k, v = self.kv(x)
 		
-		# compute attention scores
-		# Attention Scores = Q * K^T / sqrt(d_k)
-		#  Q(b, h, t, d) * K(b, h, d, t) ->  (b, h, t, t)
 		attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, k.transpose(-1, -2))
 		
 		# context mask used in Cross-Attention (encoder-decoder) and Self-Attention (encoder)
@@ -68,9 +77,11 @@ class SwitchHeadAttention(nn.Module):
 
 		# Apply attention scores to V
 		# (b, h, t, t) * V(b, h, t, d) -> (b, h, t, d)
-		output = einsum('b h i j, b h j d -> h b i d', attn_probs, v)
+		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v)
+		output = rearrange(output, 'b h t d -> h b t d')
 
-		output = [w(head) for w, head in zip(self.W_o, output)]
+
+		output = [w(o_head) * s for w, o_head , s  in zip(self.W_o, output, scores)]
 
 		output = torch.stack(output, dim=2).sum(dim=2)
 	
