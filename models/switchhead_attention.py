@@ -46,15 +46,15 @@ class SwitchHeadAttention(nn.Module):
 
 	def forward(self, x, context=None, causal_mask=None, context_mask=None):
 
-		scores = torch.sigmoid(self.W_s(x))
-		
-		eps = scores.topk(k=3, dim=2)[1] 
+		s = torch.sigmoid(self.W_s(x))
 
-		scores.scatter_(2, eps, 0)
+		eps = s.topk(k=3, dim=2)[1] 
 
+		scores = torch.zeros_like(s)
+		scores.scatter_(2, eps, s)
 		scores = repeat(scores, 'b t s -> b t s d', d = self.dim)
 		scores = rearrange(scores, 'b t s d -> s b t d')
-		
+
 		q = self.q(x)
 
 		if exists(context):
@@ -88,3 +88,4 @@ class SwitchHeadAttention(nn.Module):
 		output = torch.stack(output, dim=2).sum(dim=2)
 	
 		return output
+	
