@@ -12,7 +12,6 @@ def exists(val):
 
 
 
-
 class SwitchHeadAttention(nn.Module):
 	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, dropout=0.0):
 		super(SwitchHeadAttention, self).__init__()
@@ -54,35 +53,38 @@ class SwitchHeadAttention(nn.Module):
 
 	def forward(self, x, context=None, causal_mask=None, context_mask=None):
 
+		# prepare source 
 		ss = torch.sigmoid(self.W_s(x))
-		sd = torch.sigmoid(self.W_d(x))
-
 		ss = rearrange(ss, 'b t (h e) -> b t h e', h=self.num_heads)
-		sd = rearrange(sd, 'b t (h e) -> b t h e', h=self.num_heads)
-		
+		# get top K experts
 		eps_s = ss.topk(k=3, dim=3).indices
+
+		# prepare destination
+		sd = torch.sigmoid(self.W_d(x))
+		sd = rearrange(sd, 'b t (h e) -> b t h e', h=self.num_heads)
+		# get top K experts
 		eps_d = sd.topk(k=3, dim=3).indices
 
-		scores_q = self.get_scores(eps_d , sd)
-		scores_k = self.get_scores(eps_s , ss)
-		scores_v = self.get_scores(eps_s , ss)
+		# prepare source and destination scores
+		sd = self.get_scores(eps_d , sd)
+		ss = self.get_scores(eps_s , ss)
 
-	
-		q = self.q(x) * scores_q  # b, h, t, 
-		q = q.sum(dim=-2)
-		q = rearrange(q, 'b t h d -> b h t d')
-
-
+		# prepare query, key, value
+		q = self.q(x) 
 		if exists(context):
 			k, v = self.kv(context)
 		else:
 			k, v = self.kv(x)
 
-		k = k * scores_k
+		q = q * sd  
+		q = q.sum(dim=-2)
+		q = rearrange(q, 'b t h d -> b h t d')
+
+		k = k * ss
 		k = k.sum(dim=-2)
 		k = rearrange(k, 'b t h d -> b h t d')
 
-		v = v * scores_v
+		v = v * ss
 		v = v.sum(dim=-2)
 		v = rearrange(v, 'b t h d -> b h t d')
 
@@ -103,10 +105,8 @@ class SwitchHeadAttention(nn.Module):
 		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v)
 		output = rearrange(output, 'b h t d -> h b t d')
 
-
-		output = [w(o_head)  for w, o_head   in zip(self.W_o, output)]
+		output = [w(o_head) for w, o_head in zip(self.W_o, output)]
 
 		output = torch.stack(output, dim=2).sum(dim=2)
 	
 		return output
-	
