@@ -65,6 +65,7 @@ class SwitchHeadAttention(nn.Module):
 
 		scores_q = self.get_scores(eps_d , sd)
 		scores_k = self.get_scores(eps_s , ss)
+		scores_v = self.get_scores(eps_s , ss)
 
 	
 		q = self.q(x) * scores_q  # b, h, t, 
@@ -81,7 +82,7 @@ class SwitchHeadAttention(nn.Module):
 		k = k.sum(dim=-2)
 		k = rearrange(k, 'b t h d -> b h t d')
 
-		v = v * scores_k
+		v = v * scores_v
 		v = v.sum(dim=-2)
 		v = rearrange(v, 'b t h d -> b h t d')
 
