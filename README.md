@@ -104,7 +104,7 @@ from models.switchhead_attention import SwitchHeadAttention
 
 attention = SwitchHeadAttention(dim=512, num_heads=2, dim_head=64, num_experts=5)
 	
-x = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
+x = torch.randn(2, 10, 512)  # (b, timesteps, dim)
 x = attention(x)
 print(x.shape)
 ```
