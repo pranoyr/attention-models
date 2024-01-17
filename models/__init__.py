@@ -3,6 +3,7 @@ from .vqgan import VQGAN
 from .vit import ViT
 from .softmax_attention import SoftmaxAttention
 from .agent_attention import AgentAttention
+from .switchhead_attention import SwitchHeadAttention
 from .parti import Parti
 from .maskgit import MaskGitTransformer
 from .muse import MUSE

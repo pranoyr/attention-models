@@ -6,6 +6,7 @@ Implementing some of the SOTA papers based on Transformers.
   * [Attention is All you Need](#attention-is-all-you-need) (Transformer)
   * [Softmax Attention](#softmax-attention) 
   * [Agent Attention](#agent-attention) 
+  * [SwitchHead](#switch-head) (Accelerating transformers with Mixture Of Experts)
   * [Vision Transformer](#vision-transformer) (Image Classification Transformer)
   * [Vector Quantised GAN](#vqgan) (VQGAN)
   * [Parti](#parti) (Google's text to image)
@@ -93,7 +94,20 @@ print(output.shape) # (b, timesteps, dim)
 
 ```
 
+## Switch Head
 
+<a href="https://arxiv.org/abs/2312.07987">Paper</a>, [Code](models/switchhead_attention.py)
+
+```python
+import torch
+from models.switchhead_attention import SwitchHeadAttention
+
+attention = SwitchHeadAttention(dim=512, num_heads=2, dim_head=64, num_experts=5)
+	
+x = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
+x = attention(x)
+print(x.shape)
+```
 
 ## Vision Transformer
 
