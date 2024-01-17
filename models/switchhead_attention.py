@@ -11,6 +11,9 @@ def exists(val):
 	return val is not None
 
 
+def default(val, d):
+	return val if exists(val) else d
+
 
 class SwitchHeadAttention(nn.Module):
 	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, dropout=0.0):
@@ -71,11 +74,9 @@ class SwitchHeadAttention(nn.Module):
 
 		# prepare query, key, value
 		q = self.q(x) 
-		if exists(context):
-			k, v = self.kv(context)
-		else:
-			k, v = self.kv(x)
-
+		x = default(context, x)
+		k, v = self.kv(x)
+		
 		q = q * sd  
 		q = q.sum(dim=-2)
 		q = rearrange(q, 'b t h d -> b h t d')
