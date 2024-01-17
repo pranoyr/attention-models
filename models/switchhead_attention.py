@@ -73,22 +73,18 @@ class SwitchHeadAttention(nn.Module):
 
 	def forward(self, x, context=None, causal_mask=None, context_mask=None):
 
-		# prepare source 
+		# prepare source-side
 		ss = torch.sigmoid(self.W_s(x))
 		# get top K experts
 		eps_s = ss.topk(k=3, dim=3).indices
+		ss = self.get_scores(eps_s , ss)
 
-		# prepare destination
+		# prepare destination-side
 		sd = torch.sigmoid(self.W_d(x))
 		# get top K experts
 		eps_d = sd.topk(k=3, dim=3).indices
-
-		# prepare source and destination scores
 		sd_o = self.get_scores_o(eps_d , sd)
-
 		sd = self.get_scores(eps_d , sd)
-		ss = self.get_scores(eps_s , ss)
-
 
 		# prepare query, key, value
 		q = self.q(x) 
