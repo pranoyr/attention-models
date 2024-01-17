@@ -66,7 +66,7 @@ from models import SoftmaxAttention
 
 attention = SoftmaxAttention(dim=512, num_heads=16, dim_head=64)
 	
-x = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
+x = torch.randn(2, 10, 512)  # (b, timesteps, dim)
 
 # causal mask used in Masked Multi-Head Attention
 i, j = x.shape[1], x.shape[1]
@@ -87,7 +87,7 @@ from models import AgentAttention
 
 attention = AgentAttention(dim=384, num_heads=6, dim_head=64)
 	
-x = torch.randn(2, 10, 384)  # (b, timesteps_q, dim)
+x = torch.randn(2, 10, 384)  # (b, timesteps, dim)
 
 output = attention(x)
 print(output.shape) # (b, timesteps, dim)
