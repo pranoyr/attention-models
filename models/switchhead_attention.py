@@ -54,8 +54,6 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t h (e d) -> b t h e d', e=self.num_experts)
 		)
 
-		self.dropout = nn.Dropout(dropout)
-
 		self.scale = dim_head ** -0.5
 
 	def get_scores(self, eps, s):
