@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import math
-from einops import rearrange, reduce, repeat
+from einops import rearrange, repeat
 from torch import einsum
 from einops.layers.torch import Rearrange
 
@@ -11,8 +11,10 @@ def exists(val):
 	return val is not None
 
 
+
 def default(val, d):
 	return val if exists(val) else d
+
 
 
 class SwitchHeadAttention(nn.Module):
@@ -23,7 +25,6 @@ class SwitchHeadAttention(nn.Module):
 		self.num_heads = num_heads
 		self.dim_head = dim_head
 		self.num_experts = num_experts
-
 
 		self.q = nn.Sequential(
 			nn.Linear(dim, num_heads * num_experts * dim_head, bias=False),
@@ -37,11 +38,14 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t (kv h e d) -> kv b t h e d', d = self.dim_head, h = self.num_heads, e=self.num_experts)
 		)
 
-
 		self.W_s = nn.Linear(dim, num_heads * num_experts, bias=False)
 		self.W_d = nn.Linear(dim, num_heads * num_experts, bias=False)
 	
-		self.W_o = nn.ModuleList([nn.Linear(dim_head, dim) for _ in range(num_heads)])
+		self.W_o = nn.Sequential(
+			nn.Linear(dim_head,  num_experts * dim, bias=False),
+			nn.Dropout(dropout),
+			Rearrange('b t h (e d) -> b t h e d', e=self.num_experts)
+		)
 
 		self.dropout = nn.Dropout(dropout)
 
@@ -51,6 +55,12 @@ class SwitchHeadAttention(nn.Module):
 		scores = torch.zeros_like(s)
 		scores.scatter_(3, eps, s)
 		scores = repeat(scores, 'b t h e -> b t h e d', d = self.dim_head)
+		return scores
+	
+	def get_scores_o(self, eps, s):
+		scores = torch.zeros_like(s)
+		scores.scatter_(3, eps, 1.0)
+		scores = repeat(scores, 'b t h e -> b t h e d', d = self.dim)
 		return scores
 
 
@@ -69,8 +79,11 @@ class SwitchHeadAttention(nn.Module):
 		eps_d = sd.topk(k=3, dim=3).indices
 
 		# prepare source and destination scores
+		sd_o = self.get_scores_o(eps_d , sd)
+
 		sd = self.get_scores(eps_d , sd)
 		ss = self.get_scores(eps_s , ss)
+
 
 		# prepare query, key, value
 		q = self.q(x) 
@@ -104,10 +117,14 @@ class SwitchHeadAttention(nn.Module):
 
 		# Apply attention scores to V
 		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v)
-		output = rearrange(output, 'b h t d -> h b t d')
+		output = rearrange(output, 'b h t d -> b t h d')
 
-		output = [w(o_head) for w, o_head in zip(self.W_o, output)]
+		output = self.W_o(output)
 
-		output = torch.stack(output, dim=2).sum(dim=2)
+		output = output * sd_o
+		output = output.sum(dim=-2).sum(dim=-2)
 	
 		return output
+
+
+
