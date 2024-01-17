@@ -38,8 +38,15 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t (kv h e d) -> kv b t h e d', d = self.dim_head, h = self.num_heads, e=self.num_experts)
 		)
 
-		self.W_s = nn.Linear(dim, num_heads * num_experts, bias=False)
-		self.W_d = nn.Linear(dim, num_heads * num_experts, bias=False)
+		self.W_s = nn.Sequential(
+			nn.Linear(dim, num_heads * num_experts, bias=False),
+			Rearrange('b t (h e) -> b t h e', h=self.num_heads, e=self.num_experts)
+		)
+
+		self.W_d =  nn.Sequential(
+			nn.Linear(dim, num_heads * num_experts, bias=False),
+			Rearrange('b t (h e) -> b t h e', h=self.num_heads, e=self.num_experts)
+		)
 	
 		self.W_o = nn.Sequential(
 			nn.Linear(dim_head,  num_experts * dim, bias=False),
@@ -68,13 +75,11 @@ class SwitchHeadAttention(nn.Module):
 
 		# prepare source 
 		ss = torch.sigmoid(self.W_s(x))
-		ss = rearrange(ss, 'b t (h e) -> b t h e', h=self.num_heads)
 		# get top K experts
 		eps_s = ss.topk(k=3, dim=3).indices
 
 		# prepare destination
 		sd = torch.sigmoid(self.W_d(x))
-		sd = rearrange(sd, 'b t (h e) -> b t h e', h=self.num_heads)
 		# get top K experts
 		eps_d = sd.topk(k=3, dim=3).indices
 
