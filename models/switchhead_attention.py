@@ -48,13 +48,14 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t (h e) -> b t h e', h=self.num_heads, e=self.num_experts)
 		)
 	
-		w_o = nn.Sequential(
-			nn.Linear(dim_head,  num_experts * dim, bias=False),
-			nn.Dropout(dropout),
-			Rearrange('b t (e d) -> b t e d', e=self.num_experts)
-		)
+		# w_o = nn.Sequential(
+		# 	nn.Linear(dim_head,  num_experts * dim, bias=False),
+		# 	nn.Dropout(dropout),
+		# 	Rearrange('b t (e d) -> b t e d', e=self.num_experts)
+		# )
+		# self.W_o =  [ w_o for _ in range(self.num_heads)]
 
-		self.W_o =  [ w_o for _ in range(self.num_heads)]
+		self.W_o = nn.Conv2d(num_heads , num_heads * dim * num_experts , (1 , dim_head) , groups = num_heads)
 
 		self.scale = dim_head ** -0.5
 
@@ -120,9 +121,11 @@ class SwitchHeadAttention(nn.Module):
 		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v)
 		# output = rearrange(output, 'b h t d -> b t h d')
 
-		output = [self.W_o[i](output[:,i,:,:]) for i in range(self.num_heads)]  
+		# output = [self.W_o[i](output[:,i,:,:]) for i in range(self.num_heads)]  
+		output = self.W_o(output).squeeze(-1)
+		output = rearrange(output , 'b (h e d) t-> b t h e d' , h = self.num_heads , e = self.num_experts)
 		
-		output = torch.stack(output, dim=-3)
+		# output = torch.stack(output, dim=-3)
 		output = output * sd_o
 		output = output.sum(dim=-2).sum(dim=-2)
 		return output
