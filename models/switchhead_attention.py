@@ -50,13 +50,6 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t (h e) -> b t h e', h=self.num_heads, e=self.num_experts)
 		)
 	
-		# w_o = nn.Sequential(
-		# 	nn.Linear(dim_head,  num_experts * dim, bias=False),
-		# 	nn.Dropout(dropout),
-		# 	Rearrange('b t (e d) -> b t e d', e=self.num_experts)
-		# )
-		# self.W_o =  [ w_o for _ in range(self.num_heads)]
-
 		self.W_o = nn.Sequential(nn.Conv2d(num_heads , num_heads * dim * num_experts , (1 , dim_head) , groups = num_heads),
 					Rearrange('b (h e d) t 1-> b t h e d' , h = self.num_heads , e = self.num_experts))
 
@@ -124,7 +117,6 @@ class SwitchHeadAttention(nn.Module):
 		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v)
 		# output = rearrange(output, 'b h t d -> b t h d')
 
-		# output = [self.W_o[i](output[:,i,:,:]) for i in range(self.num_heads)]  
 		output = self.W_o(output)
 		
 		# output = torch.stack(output, dim=-3)
