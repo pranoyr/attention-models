@@ -54,13 +54,13 @@ class SwitchHeadAttention(nn.Module):
 
 	def get_scores(self, eps, s):
 		scores = torch.zeros_like(s)
-		scores.scatter_(3, eps, s)
+		scores.scatter_(-1, eps, s)
 		scores = repeat(scores, 'b t h e -> b t h e d', d = self.dim_head)
 		return scores
 	
 	def get_scores_o(self, eps, s):
 		scores = torch.zeros_like(s)
-		scores.scatter_(3, eps, 1.0)
+		scores.scatter_(-1, eps, 1.0)
 		scores = repeat(scores, 'b t h e -> b t h e d', d = self.dim)
 		return scores
 
@@ -70,13 +70,13 @@ class SwitchHeadAttention(nn.Module):
 		# prepare source-side
 		ss = self.act_fn(self.W_s(x))
 		# get top K experts
-		eps_s = ss.topk(k=3, dim=3).indices
+		eps_s = ss.topk(k=3, dim=-1).indices
 		ss = self.get_scores(eps_s , ss)
 
 		# prepare destination-side
 		sd = self.act_fn(self.W_d(x))
 		# get top K experts
-		eps_d = sd.topk(k=3, dim=3).indices
+		eps_d = sd.topk(k=3, dim=-1).indices
 		sd_o = self.get_scores_o(eps_d , sd)
 		sd = self.get_scores(eps_d , sd)
 
