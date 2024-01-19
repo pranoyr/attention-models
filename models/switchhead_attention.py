@@ -115,8 +115,7 @@ class SwitchHeadAttention(nn.Module):
 
 		# Apply attention scores to V
 		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v)
-		# output = rearrange(output, 'b h t d -> b t h d')
-
+	
 		output = self.W_o(output)
 		
 		# output = torch.stack(output, dim=-3)
