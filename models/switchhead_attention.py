@@ -6,15 +6,12 @@ from torch import einsum
 from einops.layers.torch import Rearrange
 
 
-# helper function
+# helper functions
 def exists(val):
 	return val is not None
 
-
-
 def default(val, d):
 	return val if exists(val) else d
-
 
 
 class SwitchHeadAttention(nn.Module):
