@@ -18,13 +18,15 @@ def default(val, d):
 
 
 class SwitchHeadAttention(nn.Module):
-	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, dropout=0.0):
+	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, act_fn="sigmoid", dropout=0.0):
 		super(SwitchHeadAttention, self).__init__()
 
 		self.dim = dim
 		self.num_heads = num_heads
 		self.dim_head = dim_head
 		self.num_experts = num_experts
+		
+		self.act_fn = nn.Sigmoid() if act_fn == "sigmoid" else nn.Softmax(dim=-1)
 
 		self.q = nn.Sequential(
 			nn.Linear(dim, num_heads * num_experts * dim_head, bias=False),
@@ -76,13 +78,13 @@ class SwitchHeadAttention(nn.Module):
 	def forward(self, x, context=None, causal_mask=None, context_mask=None):
 
 		# prepare source-side
-		ss = torch.sigmoid(self.W_s(x))
+		ss = self.act_fn(self.W_s(x))
 		# get top K experts
 		eps_s = ss.topk(k=3, dim=3).indices
 		ss = self.get_scores(eps_s , ss)
 
 		# prepare destination-side
-		sd = torch.sigmoid(self.W_d(x))
+		sd = self.act_fn(self.W_d(x))
 		# get top K experts
 		eps_d = sd.topk(k=3, dim=3).indices
 		sd_o = self.get_scores_o(eps_d , sd)
