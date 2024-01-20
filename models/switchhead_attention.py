@@ -59,32 +59,23 @@ class SwitchHeadAttention(nn.Module):
 
 		self.scale = dim_head ** -0.5
 
-	def get_scores(self, eps, s):
+	def topk_scores(self, s, hard=False):
+		eps = s.topk(k=self.sel_experts, dim=-1).indices
 		scores = torch.zeros_like(s)
+		s =  1.0 if hard else s
 		scores.scatter_(-1, eps, s)
-		scores = repeat(scores, 'b t h e -> b t h e d', d = self.dim_head)
+		scores = rearrange(scores, 'b t h e -> b t h e 1')
 		return scores
 	
-	def get_scores_o(self, eps, s):
-		scores = torch.zeros_like(s)
-		scores.scatter_(-1, eps, 1.0)
-		scores = repeat(scores, 'b t h e -> b t h e d', d = self.dim)
-		return scores
-
-
 	def forward(self, x, context=None, causal_mask=None, context_mask=None):
 
 		# prepare source-side
 		ss = self.act_fn(self.W_s(x))
-		# get top K experts
-		eps_s = ss.topk(k=self.sel_experts, dim=-1).indices
-		ss = self.get_scores(eps_s , ss)
+		ss = self.topk_scores(ss)
 
 		# prepare destination-side
 		sd = self.act_fn(self.W_d(x))
-		# get top K experts
-		eps_d = sd.topk(k=self.sel_experts, dim=-1).indices
-		sd = self.get_scores_o(eps_d , sd)
+		sd = self.topk_scores(sd, True)
 	
 		# prepare query, key, value
 		q = self.q(x) 
