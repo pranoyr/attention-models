@@ -23,6 +23,7 @@ class MoELayer(nn.Module):
 					nn.Linear(input_dim, output_dim * num_experts, bias=False),
 					Rearrange('b t (e d) -> b t e d', d = input_dim, e=num_experts)
 				)
+		
 
 	def topk_scores(self, scores, hard=False):
 		eps = scores.topk(k=self.sel_experts, dim=-1).indices
@@ -30,21 +31,19 @@ class MoELayer(nn.Module):
 		mask = torch.zeros_like(scores).scatter_(-1, eps, 1)
 		scores = scores * mask
 
-		scores = rearrange(scores, 'b t e -> b t e 1')
 		return scores
 		 
 	def forward (self, x):
 		gating_scores = torch.softmax(self.gate(x), dim=-1)
 		gating_scores = self.topk_scores(gating_scores)
 
-		x = self.experts(x) * gating_scores
-		x = x.sum(dim=-2)
-		return x
+		output = torch.einsum('b t e, b t e d -> b t d', gating_scores, self.experts(x))
+		return output
 
 
 if __name__ == '__main__':
 	moe = MoELayer(input_dim=512,  output_dim=512, num_experts=6, sel_experts=3)
 	x = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
 	output = moe(x)
-	
+
 	print(output.shape) # (b, timesteps, dim)	
