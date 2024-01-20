@@ -59,11 +59,17 @@ class SwitchHeadAttention(nn.Module):
 
 		self.scale = dim_head ** -0.5
 
-	def topk_scores(self, s, hard=False):
-		eps = s.topk(k=self.sel_experts, dim=-1).indices
-		scores = torch.zeros_like(s)
-		s =  1.0 if hard else s
-		scores.scatter_(-1, eps, s)
+
+	def topk_scores(self, scores, hard=False):
+		eps = scores.topk(k=self.sel_experts, dim=-1).indices
+	
+		mask = torch.zeros_like(scores).scatter_(-1, eps, 1)
+
+		if hard:
+			return mask.unsqueeze(-1)
+
+		scores = scores * mask
+
 		scores = rearrange(scores, 'b t h e -> b t h e 1')
 		return scores
 	
