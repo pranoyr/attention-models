@@ -66,11 +66,11 @@ class SwitchHeadAttention(nn.Module):
 		mask = torch.zeros_like(scores).scatter_(-1, eps, 1)
 
 		if hard:
-			return mask.unsqueeze(-1)
+			return mask
 
 		scores = scores * mask
 
-		scores = rearrange(scores, 'b t h e -> b t h e 1')
+		# scores = rearrange(scores, 'b t h e -> b t h e 1')
 		return scores
 	
 	def forward(self, x, context=None, causal_mask=None, context_mask=None):
@@ -86,11 +86,9 @@ class SwitchHeadAttention(nn.Module):
 		# prepare query, key, value
 		q = self.q(x) 
 		x = default(context, x)
-		k, v = self.k(x), self.v(x)
+		k = self.k(x)
 		
-		v = v * ss
-		v = v.sum(dim=-2)
-		v = rearrange(v, 'b t h d -> b h t d')
+		v = torch.einsum('b t h e, b t h e d -> b h t d', ss, self.v(x))
 
 		# compute attention scores
 		attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, k.transpose(-1, -2))
@@ -107,10 +105,9 @@ class SwitchHeadAttention(nn.Module):
 
 		# Apply attention scores to V
 		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v)
-	
-		output = self.W_o(output)
-		
-		# output = torch.stack(output, dim=-3)
-		output = output * sd
-		output = output.sum(dim=-2).sum(dim=-2)
+
+		output = torch.einsum('b t h e , b t h e d -> b t h d', sd, self.W_o(output))
+
+		# sum over heads
+		output = output.sum(dim=-2)
 		return output
