@@ -30,7 +30,6 @@ class MoELayer(nn.Module):
 		
 		mask = torch.zeros_like(scores).scatter_(-1, eps, 1)
 		scores = scores * mask
-
 		return scores
 		 
 	def forward (self, x):
