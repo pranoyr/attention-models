@@ -15,26 +15,33 @@ def default(val, d):
 
 
 class SwitchHeadAttention(nn.Module):
-	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, act_fn="sigmoid", dropout=0.0):
+	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, sel_experts=3,  act_fn="sigmoid", dropout=0.0):
 		super(SwitchHeadAttention, self).__init__()
 
 		self.dim = dim
 		self.num_heads = num_heads
 		self.dim_head = dim_head
 		self.num_experts = num_experts
+		self.sel_experts = sel_experts
 		
 		self.act_fn = nn.Sigmoid() if act_fn == "sigmoid" else nn.Softmax(dim=-1)
 
 		self.q = nn.Sequential(
-			nn.Linear(dim, num_heads * num_experts * dim_head, bias=False),
+			nn.Linear(dim, num_heads * dim_head, bias=False),
 			nn.Dropout(dropout),
-			Rearrange('b t (h e d) -> b t h e d', h=self.num_heads, e=self.num_experts)
+			Rearrange('b t (h d) -> b h t d', h=self.num_heads)
 		)
 
-		self.kv = nn.Sequential(
-			nn.Linear(dim, 2 * num_heads * num_experts * dim_head, bias=False),
+		self.k = nn.Sequential(
+			nn.Linear(dim, num_heads * dim_head, bias=False),
 			nn.Dropout(dropout),
-			Rearrange('b t (kv h e d) -> kv b t h e d', d = self.dim_head, h = self.num_heads, e=self.num_experts)
+			Rearrange('b t (h d) -> b h t d', h=self.num_heads)
+		)
+
+		self.v = nn.Sequential(
+			nn.Linear(dim, num_heads * num_experts * dim_head, bias=False),
+			nn.Dropout(dropout),
+			Rearrange('b t (h e d) -> b t h e d', d = self.dim_head, h = self.num_heads, e=self.num_experts)
 		)
 
 		self.W_s = nn.Sequential(
@@ -70,29 +77,20 @@ class SwitchHeadAttention(nn.Module):
 		# prepare source-side
 		ss = self.act_fn(self.W_s(x))
 		# get top K experts
-		eps_s = ss.topk(k=3, dim=-1).indices
+		eps_s = ss.topk(k=self.sel_experts, dim=-1).indices
 		ss = self.get_scores(eps_s , ss)
 
 		# prepare destination-side
 		sd = self.act_fn(self.W_d(x))
 		# get top K experts
-		eps_d = sd.topk(k=3, dim=-1).indices
-		sd_o = self.get_scores_o(eps_d , sd)
-		sd = self.get_scores(eps_d , sd)
-
+		eps_d = sd.topk(k=self.sel_experts, dim=-1).indices
+		sd = self.get_scores_o(eps_d , sd)
+	
 		# prepare query, key, value
 		q = self.q(x) 
 		x = default(context, x)
-		k, v = self.kv(x)
+		k, v = self.k(x), self.v(x)
 		
-		q = q * sd  
-		q = q.sum(dim=-2)
-		q = rearrange(q, 'b t h d -> b h t d')
-
-		k = k * ss
-		k = k.sum(dim=-2)
-		k = rearrange(k, 'b t h d -> b h t d')
-
 		v = v * ss
 		v = v.sum(dim=-2)
 		v = rearrange(v, 'b t h d -> b h t d')
@@ -116,10 +114,6 @@ class SwitchHeadAttention(nn.Module):
 		output = self.W_o(output)
 		
 		# output = torch.stack(output, dim=-3)
-		output = output * sd_o
+		output = output * sd
 		output = output.sum(dim=-2).sum(dim=-2)
 		return output
-
-	
-
-
