@@ -54,7 +54,7 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t (h e) -> b t h e', h=self.num_heads, e=self.num_experts)
 		)
 	
-		self.W_o = nn.Sequential(nn.Conv2d(num_heads , num_heads * dim * num_experts , (1 , dim_head) , groups = num_heads),
+		self.W_o = nn.Sequential(nn.Conv2d(num_heads , num_heads * dim * num_experts , (1 , dim_head) , groups = num_heads, bias=False),
 					Rearrange('b (h e d) t 1-> b t h e d' , h = self.num_heads , e = self.num_experts))
 
 		self.scale = dim_head ** -0.5
@@ -69,8 +69,6 @@ class SwitchHeadAttention(nn.Module):
 			return mask
 
 		scores = scores * mask
-
-		# scores = rearrange(scores, 'b t h e -> b t h e 1')
 		return scores
 	
 	def forward(self, x, context=None, causal_mask=None, context_mask=None):
