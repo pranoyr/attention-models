@@ -16,11 +16,11 @@ class MoELayer(nn.Module):
 
 		self.sel_experts = sel_experts
 		self.gate =  nn.Sequential(
-					nn.Linear(input_dim, num_experts,  bias=False),
+					nn.Linear(input_dim, num_experts),
 				)
 		
 		self.experts = nn.Sequential(
-					nn.Linear(input_dim, output_dim * num_experts, bias=False),
+					nn.Linear(input_dim, output_dim * num_experts),
 					Rearrange('b t (e d) -> b t e d', d = input_dim, e=num_experts)
 				)
 		
