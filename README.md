@@ -317,6 +317,7 @@ imgs = torch.randn(2, 3, 256, 256)
 indices = vitvqgan.encode_imgs(imgs)
 imgs = vitvqgan.decode_indices(indices)
 print(imgs.shape)
+```
 
 
 ## TODOs
