@@ -21,7 +21,7 @@ Implementing some of the SOTA papers based on Transformers.
 ```bash
 python main.py --config=<path-to-cfg-file>
 
-# Example usage - 
+# Example usage 
 python main.py --config=/cfg/vitvqgan.yaml
 ```
 
