@@ -6,12 +6,13 @@ from .transformer import Transformer
 from .parti import Parti
 from .muse import MUSE
 import torch
+import logging
 
 
 def load_model(model, checkpoint):
 	ckpt = torch.load(checkpoint)
 	model.load_state_dict(ckpt['state_dict'])
-	print(f"Loaded checkpoint from {checkpoint}")
+	logging.info(f"Loaded pretrained ViTVQGAN from {checkpoint}")
 
 
 def build_model(cfg):
