@@ -16,7 +16,8 @@ Implementing some of the SOTA papers based on Transformers.
   
 
 
-### Getting started with Training
+## Getting started with Training
+
 ```bash
 python main.py --config=<path-to-cfg-file>
 
