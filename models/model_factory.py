@@ -54,16 +54,16 @@ def build_model(cfg):
 		load_model(vq, cfg.vitvqgan.checkpoint)
 
 		# MUSE 
-		dim = cfg.muse.dim
+		dim = cfg.model.dim
 		encoder_params = dict(
-				t5_name = cfg.muse.encoder.t5_name,
-				max_length = cfg.muse.encoder.max_length
+				t5_name = cfg.model.encoder.t5_name,
+				max_length = cfg.model.encoder.max_length
 		)
 		
 		decoder_params = dict(
-			n_heads=cfg.muse.n_heads,
-			d_head=cfg.muse.d_head,
-			depth=cfg.muse.depth)
+			n_heads=cfg.model.decoder.n_heads,
+			d_head=cfg.model.decoder.d_head,
+			depth=cfg.model.decoder.depth)
 
 
 		model = MUSE(dim, vq, **encoder_params, **decoder_params)

@@ -49,6 +49,8 @@ class VQGANTrainer(nn.Module):
 		dataloaders
 		):
 		super().__init__()
+  
+		self.cfg = cfg
 		
 		# init accelerator
 		self.accelerator = Accelerator(

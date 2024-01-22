@@ -32,6 +32,8 @@ class MuseTrainer(nn.Module):
 		dataloaders
 		):
 		super().__init__()
+  
+		self.cfg = cfg
 		
 		# init accelerator
 		self.accelerator = Accelerator(
@@ -59,7 +61,7 @@ class MuseTrainer(nn.Module):
 		self.gradient_accumulation_steps = cfg.training.gradient_accumulation_steps
 		
 		# Optimizer
-		self.optim = Adam(self.vqvae.parameters(), lr=lr, betas=(beta1, beta2))
+		self.optim = Adam(self.model.parameters(), lr=lr, betas=(beta1, beta2))
 	
 		self.scheduler = get_constant_schedule_with_warmup(
 			self.optim,
@@ -117,9 +119,10 @@ class MuseTrainer(nn.Module):
 					img, text = batch
 					img = img.to(self.device)
 				
-					with self.accelerator.accumulate(self.discr):
+					with self.accelerator.accumulate(self.model):
 						with self.accelerator.autocast():
-							loss = self.vqvae(img, text)
+		  
+							loss = self.model(text, img)
 						
 						self.accelerator.backward(loss)
 						if self.accelerator.sync_gradients:
@@ -136,7 +139,7 @@ class MuseTrainer(nn.Module):
 						self.evaluate()
 	  
 					if not (self.global_step % self.gradient_accumulation_steps):
-						lr = self.g_optim.param_groups[0]['lr']
+						lr = self.optim.param_groups[0]['lr']
 						self.accelerator.log({"loss": loss.item(), "lr": lr}, step=self.global_step)
 			
 					self.global_step += 1
@@ -154,7 +157,7 @@ class MuseTrainer(nn.Module):
 		
 		checkpoint={
 				'step': self.global_step,
-				'state_dict': self.accelerator.unwrap_model(self.vqvae).state_dict()
+				'state_dict': self.accelerator.unwrap_model(self.model).state_dict()
 			}
 
 		self.accelerator.save(checkpoint, filename)
@@ -171,16 +174,19 @@ class MuseTrainer(nn.Module):
 
 	@torch.no_grad()
 	def evaluate(self):
-		self.vqvae.eval()
+		self.model.eval()
 		with tqdm(self.val_dl, dynamic_ncols=True, disable=not self.accelerator.is_local_main_process) as valid_dl:
 			for i, batch in enumerate(valid_dl):
-				text = batch
+				img, text = batch
+	
+				if i == 10:
+					break
 			
 				img = self.model.generate(text)
 				
 				grid = make_grid(img, nrow=6, normalize=True, value_range=(-1, 1))
 				save_image(grid, os.path.join(self.image_saved_dir, f'step_{i}.png'))
-		self.vqvae.train()
+		self.model.train()
 
 
 

@@ -17,7 +17,7 @@ codebook:
         codebook_size: 8192
 
 vitvqgan:
-    checkpoint : outputs/vitvqgan/checkpoints/vitvqgan.pt
+    checkpoint : outputs/vitvqgan/checkpoints/vit_vq_org.pt
     transformer:
         dim : 256
         patch_size : 8
@@ -27,7 +27,8 @@ vitvqgan:
         dropout : 0.1
         mlp_dim: 2048
 
-muse :
+model:
+    name: muse
     dim : 512
     encoder:
         t5_name : t5-base
