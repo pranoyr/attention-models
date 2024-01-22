@@ -16,7 +16,9 @@ Implementing some of the SOTA papers based on Transformers.
   
 
 
-## Getting Started with Training
+## Getting Started
+
+### Training
 
 ```bash
 python main.py --config=<path-to-cfg-file>
@@ -26,7 +28,9 @@ python main.py --config=/cfg/vitvqgan.yaml
 ```
 
 
-## Attention is All you Need
+##  Model Usage
+
+### Attention is All you Need
 
 <a href="https://arxiv.org/abs/1706.03762">Paper</a>, [Code](models/transformer.py)
 
