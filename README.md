@@ -16,6 +16,15 @@ Implementing some of the SOTA papers based on Transformers.
   
 
 
+### Getting started with Training
+```bash
+python main.py --config=<path-to-cfg-file>
+
+# Example usage - 
+python main.py --config=/cfg/vitvqgan.yaml
+```
+
+
 ## Attention is All you Need
 
 <a href="https://arxiv.org/abs/1706.03762">Paper</a>, [Code](models/transformer.py)
@@ -307,11 +316,7 @@ imgs = torch.randn(2, 3, 256, 256)
 indices = vitvqgan.encode_imgs(imgs)
 imgs = vitvqgan.decode_indices(indices)
 print(imgs.shape)
-```
-### Training
-```bash
-python main.py --config=/cfg/vitvqgan.yaml
-```
+
 
 ## TODOs
 Search for TODO Comments in the repo and contribute. 
