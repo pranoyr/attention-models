@@ -68,7 +68,7 @@ loss = torch.nn.functional.cross_entropy(out, tgt_seq, ignore_index=0)
 loss.backward()
 ```
 
-## Softmax Attention
+### Softmax Attention
 
 [Code](models/softmax_attention.py)
 
@@ -89,7 +89,7 @@ print(output.shape) # (b, timesteps, dim
 
 ```
 
-## Agent Attention
+### Agent Attention
 
 <a href="https://arxiv.org/abs/2312.08874">Paper</a>, [Code](models/agent_attention.py)
 
@@ -106,7 +106,7 @@ print(output.shape) # (b, timesteps, dim)
 
 ```
 
-## Switch Head
+### Switch Head
 
 <a href="https://arxiv.org/abs/2312.07987">Paper</a>, [Code](models/switchhead_attention.py)
 
@@ -121,7 +121,7 @@ x = attention(x)
 print(x.shape)
 ```
 
-## Vision Transformer
+### Vision Transformer
 
 <a href="https://arxiv.org/abs/2010.11929">Paper</a>, [Code](models/vit.py)
 
@@ -137,7 +137,7 @@ print(out.shape) # (b, num_classes)
 ```
 
 
-## Parti
+### Parti
 
 <a href="https://sites.research.google/parti/">Paper</a>, [Code](models/parti.py)
 
@@ -189,7 +189,7 @@ print(imgs.shape)
 ```
 
 
-## VQGAN
+### VQGAN
 
 <a href="https://compvis.github.io/taming-transformers">Paper</a>, [Code](models/vqgan.py)
 
@@ -212,7 +212,7 @@ print(imgs.shape)
 ```
 
 
-## MaskGIT
+### MaskGIT
 
 <a href="https://arxiv.org/pdf/2202.04200.pdf">Paper</a>, [Code](models/maskgit.py)
 
@@ -245,7 +245,7 @@ loss.backward()
 ```
 
 
-## MUSE
+### MUSE
 
 <a href="https://arxiv.org/pdf/2301.00704.pdf">Paper</a>, [Code](models/muse.py)
 
@@ -290,7 +290,7 @@ imgs = muse.generate(texts)
 ```
 
 
-## ViTVQGAN
+### ViTVQGAN
 
 <a href="https://arxiv.org/pdf/2110.04627.pdf">Paper</a>, [Code](models/vitvqgan.py)
 
