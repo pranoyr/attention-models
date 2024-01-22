@@ -253,9 +253,9 @@ class VQGANTrainer(nn.Module):
 	def save_ckpt(self, rewrite=False):
 		"""Save checkpoint"""
 
-		filename = os.path.join(self.checkpoint_folder, f'vit_vq_step_{self.global_step}.pt')
+		filename = os.path.join(self.checkpoint_folder, f'{self.cfg.experiment.project_name}_step_{self.global_step}.pt')
 		if rewrite:
-			filename = os.path.join(self.checkpoint_folder, f'vit_vq.pt')
+			filename = os.path.join(self.checkpoint_folder, f'{self.cfg.experiment.project_name}.pt')
 		
 		checkpoint={
 				'step': self.global_step,
