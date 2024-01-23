@@ -14,6 +14,10 @@ def load_model(model, checkpoint):
 	model.load_state_dict(ckpt['state_dict'])
 	logging.info(f"Loaded pretrained ViTVQGAN from {checkpoint}")
 
+def freeze_model(model):
+	for param in model.parameters():
+		param.requires_grad = False
+
 
 def build_model(cfg):
 	if cfg.model.name == "vitvqgan":
@@ -53,6 +57,8 @@ def build_model(cfg):
 		)
 		vq = ViTVQGAN(vit_params, codebook_params)
 		load_model(vq, cfg.vitvqgan.checkpoint)
+		vq.eval()
+		freeze_model(vq)
 
 		# MUSE 
 		dim = cfg.model.dim
