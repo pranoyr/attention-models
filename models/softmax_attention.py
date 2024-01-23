@@ -27,9 +27,6 @@ class SoftmaxAttention(nn.Module):
 		self.num_heads = num_heads
 		self.dim_head = dim_head
 
-
-		self.q = nn.Linear(dim, num_heads * dim_head, bias=False)
-
 		self.q = nn.Sequential(
 			nn.Linear(dim, num_heads * dim_head, bias=False),
 			nn.Dropout(dropout),
