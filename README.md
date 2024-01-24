@@ -1,7 +1,7 @@
-# Attention Models in Pytorch
 
 <img src="./images/attn.png" width="500px"></img>
 
+# Attention Models in Pytorch
 Implementing some of the SOTA Research Papers based on Transformers and Attention in Pytorch
 
 ## Table of Contents
