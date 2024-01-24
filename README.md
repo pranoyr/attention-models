@@ -1,4 +1,4 @@
-# ML From Scratch
+# Attention Models in Pytorch
 
 Implementing some of the SOTA papers based on Transformers.
 
