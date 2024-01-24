@@ -1,6 +1,6 @@
 # Attention Models in Pytorch
 
-Implementing some of the state-of-the-art Research Papers based on Transformers in Pytorch
+Implementing some of the State-Of-The-Art Research Papers based on Transformers in Pytorch
 
 ## Table of Contents
   * [Attention is All you Need](#attention-is-all-you-need) (Transformer)
