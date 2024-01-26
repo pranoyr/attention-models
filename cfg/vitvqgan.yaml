@@ -20,7 +20,7 @@ model:
     name: vitvqgan
     transformer:
         dim : 512
-        patch_size : 8
+        patch_size : 16
         n_heads : 8
         d_head : 64
         depth : 8
