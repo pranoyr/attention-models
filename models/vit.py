@@ -6,9 +6,23 @@ from torch import einsum
 from models.transformer import Encoder
 
 
+class FeedForward(nn.Module):
+    def __init__(self, dim, hidden_dim, dropout = 0.):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(dim, hidden_dim),
+            nn.GELU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, dim),
+            nn.Dropout(dropout)
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
 
 class ViT(nn.Module):
-    def __init__(self, dim, image_size=256, patch_size = 64, n_heads = 8, d_head = 64, depth = 6, num_classes = None):
+    def __init__(self, dim, image_size=256, patch_size = 16, n_heads = 12, d_head = 64, depth = 12, mlp_dim=3072, num_classes = None):
         super(ViT, self).__init__()
         
         self.dim = dim
@@ -30,6 +44,7 @@ class ViT(nn.Module):
         self.pos_enc =  nn.Parameter(torch.randn(1, num_patches + 1, dim)) # 1 extra for class token
 
         self.encoder = Encoder(dim, n_heads, d_head, depth)
+        self.encoder.feed_forward = FeedForward(dim, mlp_dim)
         
 
 
