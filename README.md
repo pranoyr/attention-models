@@ -131,7 +131,7 @@ print(x.shape)
 import torch
 from models import ViT
 
-model = ViT(1024, image_size=256, patch_size=32, depth=6, n_heads=16, mlp_dim=2048,  num_classes=10)
+model = ViT(1024, image_size=256, patch_size=32, depth=6, n_heads=16, mlp_dim=2048, num_classes=10)
 
 img_batch = torch.randn(2, 3, 256, 256)
 out = model(img_batch)
