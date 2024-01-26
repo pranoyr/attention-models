@@ -307,9 +307,9 @@ vit_params = dict(
         patch_size=8,
         n_heads=8,
         d_head=64,
-        depth=6,
+        depth=8,
         mlp_dim=2048,
-        dropout=0.1)
+        dropout=0.)
 
 codebook_params = dict(codebook_size=8192, codebook_dim=32, beta=0.25)
 
