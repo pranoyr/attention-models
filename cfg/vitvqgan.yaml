@@ -19,7 +19,7 @@ codebook:
 model:
     name: vitvqgan
     transformer:
-        dim : 256
+        dim : 512
         patch_size : 8
         n_heads : 8
         d_head : 64

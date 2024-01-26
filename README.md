@@ -302,7 +302,7 @@ from models import ViTVQGAN
 
 
 vit_params = dict(
-        dim=256,
+        dim=512,
         img_size=256,
         patch_size=8,
         n_heads=8,

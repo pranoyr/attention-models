@@ -19,7 +19,7 @@ codebook:
 vitvqgan:
     checkpoint : outputs/vitvqgan/checkpoints/VitVQGAN.pt
     transformer:
-        dim : 256
+        dim : 512
         patch_size : 8
         n_heads : 8
         d_head : 64
