@@ -7,6 +7,7 @@ from .parti import Parti
 from .muse import MUSE
 import torch
 import logging
+from models import ViT
 
 
 def load_model(model, checkpoint):
@@ -75,6 +76,20 @@ def build_model(cfg):
 
 		model = MUSE(dim, vq, **encoder_params, **decoder_params)
 		return model
+	
+	if cfg.model.name == "vit":
+		# Vit
+		model = ViT(
+			dim = cfg.model.transformer.dim,
+			image_size = cfg.dataset.preprocessing.resolution,
+			patch_size = cfg.model.transformer.patch_size,
+			depth = cfg.model.transformer.depth,
+			n_heads = cfg.model.transformer.n_heads,
+			mlp_dim = cfg.model.transformer.mlp_dim,
+			num_classes = cfg.model.transformer.num_classes
+		)
+		return model
+			
 			
 			
  
