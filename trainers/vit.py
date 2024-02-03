@@ -80,6 +80,7 @@ class VitTrainer(nn.Module):
 		os.makedirs(self.image_saved_dir, exist_ok=True)
 
 
+		# loggint training details
 		logging.info(f"Train dataset size: {len(self.train_dl.dataset)}")
 		logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
 
@@ -95,7 +96,6 @@ class VitTrainer(nn.Module):
 	
 	
 	def train(self):
-	 
 		start_epoch=self.global_step//len(self.train_dl)
 		self.model.train()
 		for epoch in range(start_epoch, self.num_epoch):
@@ -104,10 +104,8 @@ class VitTrainer(nn.Module):
 					img , target = batch
 					img = img.to(self.device)
 
-				
 					with self.accelerator.accumulate(self.model):
 						with self.accelerator.autocast():
-		  
 							outputs = self.model(img)
 						
 						# cross entropy loss
@@ -124,7 +122,6 @@ class VitTrainer(nn.Module):
 						self.save_ckpt(rewrite=True)
 					
 					if not (self.global_step % self.sample_every):
-						
 						outputs = torch.softmax(outputs, dim=1)
 						acc = (outputs.argmax(dim=1) == target).float().mean().item()
 						self.accelerator.log({"acc": acc}, step=self.global_step)
