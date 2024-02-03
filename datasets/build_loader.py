@@ -33,8 +33,6 @@ def build_loader(cfg):
 											shuffle=cfg.dataset.params.shuffle, 
 											num_workers=cfg.dataset.params.num_workers) 
 	
-
-
 	return (train_dl, val_dl)
 
 
