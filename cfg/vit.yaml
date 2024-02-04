@@ -21,6 +21,7 @@ model:
         depth : 6
         dropout : 0.1
         mlp_dim: 2048
+        num_classes : 1000
 
 dataset:
     name: imagenet
