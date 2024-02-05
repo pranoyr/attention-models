@@ -1,6 +1,6 @@
 import torch
 from .coco import CoCo
-from .transforms import get_transforms
+from .transforms import get_transform
 from torchvision.datasets import ImageFolder
 
 
@@ -17,7 +17,7 @@ def build_loader(cfg):
 			val_ds = CoCo(cfg, dataType='val2017', annType='captions', is_train=False)
 
 	if cfg.dataset.name == "imagenet":
-		train_ds = ImageFolder(root=cfg.dataset.params.train_path, transform=get_transforms())
+		train_ds = ImageFolder(root=cfg.dataset.params.train_path, transform=get_transform(cfg))
 		if cfg.dataset.params.train_test_split:
 			train_size = int(cfg.dataset.params.train_test_split * len(train_ds))
 			val_size = len(train_ds) - train_size
