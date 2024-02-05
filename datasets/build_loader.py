@@ -22,6 +22,8 @@ def build_loader(cfg):
 			train_size = int(cfg.dataset.params.train_test_split * len(train_ds))
 			val_size = len(train_ds) - train_size
 			train_ds, val_ds = torch.utils.data.random_split(train_ds, [train_size, val_size])
+		else:
+			assert False, "Train test split is required for imagenet dataset"
 
 
 	train_dl = torch.utils.data.DataLoader(train_ds,
