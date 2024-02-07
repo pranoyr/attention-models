@@ -4,6 +4,7 @@ import math
 from einops import rearrange, repeat, pack
 from torch import einsum
 from einops.layers.torch import Rearrange
+from torch.nn import functional as F
 
 
 # helper functions
@@ -15,7 +16,7 @@ def default(val, d):
 
 
 class SwitchHeadAttention(nn.Module):
-	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, sel_experts=3,  act_fn="sigmoid", dropout=0.0):
+	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, sel_experts=3, dropout=0.0):
 		super(SwitchHeadAttention, self).__init__()
 
 		self.dim = dim
@@ -23,8 +24,7 @@ class SwitchHeadAttention(nn.Module):
 		self.dim_head = dim_head
 		self.num_experts = num_experts
 		self.sel_experts = sel_experts
-		
-		self.act_fn = nn.Sigmoid() if act_fn == "sigmoid" else nn.Softmax(dim=-1)
+  
 
 		self.q = nn.Sequential(
 			nn.Linear(dim, num_heads * dim_head, bias=False),
@@ -59,7 +59,7 @@ class SwitchHeadAttention(nn.Module):
 		# input shape - (b, t, d)
 		gate_logits = gate(inputs) 
 		weights, selected_experts = torch.topk(gate_logits, self.sel_experts)
-		weights = F.softmax(weights, dim=1, dtype=torch.float).to(inputs.dtype)
+		weights = torch.sigmoid(weights).to(inputs.dtype)
 
 		# results should of shape - (b, t  h, d)
 		results = torch.zeros(inputs.shape[0], inputs.shape[1], self.num_heads, self.dim_head)
