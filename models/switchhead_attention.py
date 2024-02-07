@@ -84,8 +84,7 @@ class SwitchHeadAttention(nn.Module):
 		results = torch.zeros(inputs.shape[0], inputs.shape[1], self.num_heads, self.dim)
 		for i, expert in enumerate(experts):
 			batch_idx, t, h, nth_expert = torch.where(selected_experts == i)
-			results[batch_idx, t, h] += weights[batch_idx, t, h, nth_expert, None] * expert(
-				inputs[batch_idx, t, h]
+			results[batch_idx, t, h] += expert(inputs[batch_idx, t, h]
 			)
 		return results
 	
