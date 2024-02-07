@@ -16,7 +16,7 @@ def default(val, d):
 
 
 class SwitchHeadAttention(nn.Module):
-	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, sel_experts=3, dropout=0.0):
+	def __init__(self, dim, num_heads=8, dim_head=64, num_experts=5, sel_experts=2, dropout=0.0):
 		super(SwitchHeadAttention, self).__init__()
 
 		self.dim = dim
