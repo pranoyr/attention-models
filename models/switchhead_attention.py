@@ -38,11 +38,7 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t (h d) -> b h t d', h=self.num_heads)
 		)
 
-		self.v = nn.Sequential(
-			nn.Linear(dim, num_heads * num_experts * dim_head, bias=False),
-			nn.Dropout(dropout),
-			Rearrange('b t (h e d) -> b t h e d', d = self.dim_head, h = self.num_heads, e=self.num_experts)
-		)
+		self.experts_v = nn.ModuleList([nn.Linear(dim, dim_head, bias=False) for _ in range(num_experts)])
 
 		self.W_s = nn.Sequential(
 			nn.Linear(dim, num_heads * num_experts, bias=False),
@@ -54,40 +50,57 @@ class SwitchHeadAttention(nn.Module):
 			Rearrange('b t (h e) -> b t h e', h=self.num_heads, e=self.num_experts)
 		)
 	
-		self.W_o = nn.Sequential(nn.Conv2d(num_heads , num_heads * dim * num_experts , (1 , dim_head) , groups = num_heads, bias=False),
-					Rearrange('b (h e d) t 1-> b t h e d' , h = self.num_heads , e = self.num_experts))
+		self.experts_o = nn.ModuleList([nn.Linear(dim_head, dim, bias=False) for _ in range(num_experts)])
 
 		self.scale = dim_head ** -0.5
 
 
-	def topk_scores(self, scores, hard=False):
-		eps = scores.topk(k=self.sel_experts, dim=-1).indices
+	def compute_moe(self, inputs, gate, experts):
+		# input shape - (b, t, d)
+		gate_logits = gate(inputs) 
+		weights, selected_experts = torch.topk(gate_logits, self.sel_experts)
+		weights = F.softmax(weights, dim=1, dtype=torch.float).to(inputs.dtype)
+
+		# results should of shape - (b, t  h, d)
+		results = torch.zeros(inputs.shape[0], inputs.shape[1], self.num_heads, self.dim_head)
+		for i, expert in enumerate(experts):
+			batch_idx, t, h, nth_expert = torch.where(selected_experts == i)
+			results[batch_idx, t, h] += weights[batch_idx, t, h, nth_expert, None] * expert(
+				inputs[batch_idx, t]
+			)
+		results = rearrange(results, 'b t h d -> b h t d')
+		return results
 	
-		mask = torch.zeros_like(scores).scatter_(-1, eps, 1)
 
-		if hard:
-			return mask
+	def compute_moe_o(self, inputs, gate_in, gate, experts):
+		# gate int - (b, t, d)
+		# input shape - (b, t, h, d)
 
-		scores = scores * mask
-		return scores
+		gate_logits = gate(gate_in) 
+		weights, selected_experts = torch.topk(gate_logits, self.sel_experts)
+		weights = F.softmax(weights, dim=1, dtype=torch.float).to(inputs.dtype)
+
+		# results should of shape - (b, t  h, d)
+		results = torch.zeros(inputs.shape[0], inputs.shape[1], self.num_heads, self.dim)
+		for i, expert in enumerate(experts):
+			batch_idx, t, h, nth_expert = torch.where(selected_experts == i)
+			results[batch_idx, t, h] += weights[batch_idx, t, h, nth_expert, None] * expert(
+				inputs[batch_idx, t, h]
+			)
+		return results
+	
 	
 	def forward(self, x, context=None, causal_mask=None, context_mask=None):
 
-		# prepare source-side
-		ss = self.act_fn(self.W_s(x))
-		ss = self.topk_scores(ss)
-
-		# prepare destination-side
-		sd = self.act_fn(self.W_d(x))
-		sd = self.topk_scores(sd, True)
 	
 		# prepare query, key, value
 		q = self.q(x) 
 		x = default(context, x)
 		k = self.k(x)
 		
-		v = torch.einsum('b t h e, b t h e d -> b h t d', ss, self.v(x))
-
+		
+		v = self.compute_moe(x, gate=self.W_s, experts=self.experts_v)
+	
 		# compute attention scores
 		attn_scores = einsum('b h i d, b h d j -> b h i j', q * self.scale, k.transpose(-1, -2))
 		
@@ -102,10 +115,12 @@ class SwitchHeadAttention(nn.Module):
 		attn_probs = torch.softmax(attn_scores, dim=-1)
 
 		# Apply attention scores to V
-		output = einsum('b h i j, b h j d -> b h i d', attn_probs, v)
+		output = einsum('b h i j, b h j d -> b i h d', attn_probs, v)
 
-		output = torch.einsum('b t h e , b t h e d -> b t h d', sd, self.W_o(output))
+		# output = torch.einsum('b t h e , b t h e d -> b t h d', sd, self.W_o(output))
+		output = self.compute_moe_o(output, x, gate=self.W_d, experts=self.experts_o)
 
 		# sum over heads
 		output = output.sum(dim=-2)
 		return output
+	
