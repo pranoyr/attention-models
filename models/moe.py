@@ -10,14 +10,13 @@ import torch.nn.functional as F
 
 
 
+
 class MoELayer(nn.Module):
 	def __init__(self, input_dim, output_dim, num_experts, sel_experts):
 		super().__init__()
   
 		self.sel_experts = sel_experts
-		self.gate =  nn.Sequential(
-					nn.Linear(input_dim, num_experts)
-				)
+		self.gate = nn.Linear(input_dim, num_experts)
 		
 		self.experts = nn.ModuleList([nn.Linear(input_dim, output_dim) for _ in range(num_experts)])
 	

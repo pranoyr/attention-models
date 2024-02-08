@@ -8,6 +8,7 @@ from .parti import Parti
 from .maskgit import MaskGitTransformer
 from .muse import MUSE
 from .vitvqgan import ViTVQGAN
+from .moe import MoELayer
 
 from .model_factory import build_model
 
