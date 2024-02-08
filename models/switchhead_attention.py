@@ -78,7 +78,7 @@ class SwitchHeadAttention(nn.Module):
 
 		gate_logits = gate(gate_in) 
 		weights, selected_experts = torch.topk(gate_logits, self.sel_experts)
-		weights = F.softmax(weights, dim=1, dtype=torch.float).to(inputs.dtype)
+		weights = torch.sigmoid(weights).to(inputs.dtype)
 
 		# results should of shape - (b, t  h, d)
 		results = torch.zeros(inputs.shape[0], inputs.shape[1], self.num_heads, self.dim)
