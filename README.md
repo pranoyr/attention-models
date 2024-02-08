@@ -41,13 +41,13 @@ from models import Transformer
 from einops import rearrange
 
 transformer = Transformer(
-        dim=512,
-        vocab_size=1000,
-        n_heads=16,
-        d_head=64,
-        enc_depth=6,
-        dec_depth=6,
-        n_classes=1000)
+	dim=512,
+	vocab_size=1000,
+	n_heads=16,
+	d_head=64,
+	enc_depth=6,
+	dec_depth=6,
+	n_classes=1000)
     
 src_timesteps = 10
 tgt_timesteps = 20
@@ -157,7 +157,7 @@ model = ViTMoE(
 	depth=6, 
 	n_experts=32, 
 	sel_experts=2,
-    dropout=0.0,
+    	dropout=0.0,
 	num_classes=1000)
 
 model.eval()
@@ -177,14 +177,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 	
 # Vector Quantizer 
 vit_params = dict(
-        dim=256,
-        img_size=256,
-        patch_size=8,
-        n_heads=8,
-        d_head=64,
-        depth=6,
-        mlp_dim=2048,
-        dropout=0.1)
+	dim=256,
+	img_size=256,
+	patch_size=8,
+	n_heads=8,
+	d_head=64,
+	depth=6,
+	mlp_dim=2048,
+	dropout=0.1)
 
 codebook_params = dict(codebook_size=8192, codebook_dim=32)
 vitvqgan = ViTVQGAN(vit_params, codebook_params)
@@ -258,12 +258,12 @@ vqgan = VQGAN(codebook_dim, codebook_size)
 
 # MaskGitTransformer
 transformer = MaskGitTransformer(
-        dim=512,
-        vq=vqgan,
-        vocab_size=codebook_size,
-        n_heads=16,
-        d_head=64,
-        dec_depth=6)
+	dim=512,
+	vq=vqgan,
+	vocab_size=codebook_size,
+	n_heads=16,
+	d_head=64,
+	dec_depth=6)
     
 imgs = torch.randn(2, 3, 256, 256)
 
@@ -295,8 +295,8 @@ vq = VQGAN(codebook_dim, codebook_size)
 # MUSE 
 dim = 512
 encoder_params = dict(
-        t5_name = "google/t5-v1_1-base",
-        max_length = 77
+	t5_name = "google/t5-v1_1-base",
+	max_length = 77
 )
  
 decoder_params = dict(
@@ -328,14 +328,14 @@ from models import ViTVQGAN
 
 
 vit_params = dict(
-        dim=512,
-        img_size=256,
-        patch_size=8,
-        n_heads=8,
-        d_head=64,
-        depth=8,
-        mlp_dim=2048,
-        dropout=0.)
+	dim=512,
+	img_size=256,
+	patch_size=8,
+	n_heads=8,
+	d_head=64,
+	depth=8,
+	mlp_dim=2048,
+	dropout=0.)
 
 codebook_params = dict(codebook_size=8192, codebook_dim=32, beta=0.25)
 
