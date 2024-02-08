@@ -8,10 +8,10 @@ from torch.nn import functional as F
 from models import MoELayer
 
 class Encoder(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth, dropout=0.):
+	def __init__(self, dim, n_heads, d_head, depth, n_experts, sel_experts, dropout):
 		super().__init__()
 	
-		self.layers = nn.ModuleList([EncoderLayer(dim, n_heads, d_head, dropout) for _ in range(depth)])
+		self.layers = nn.ModuleList([EncoderLayer(dim, n_heads, d_head, n_experts, sel_experts, dropout) for _ in range(depth)])
  
 	def forward(self, x, context_mask=None):
 		for layer in self.layers:
@@ -20,11 +20,11 @@ class Encoder(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-	def __init__(self, dim, n_heads, d_head, dropout):
+	def __init__(self, dim, n_heads, d_head, n_experts, sel_experts, dropout):
 		super().__init__()
 
-		self.self_attn = SwitchHeadAttention(dim, n_heads, d_head, num_experts=6, sel_experts=1, dropout=dropout)
-		self.moe = MoELayer(input_dim=dim,  output_dim=dim, num_experts=6, sel_experts=1)
+		self.self_attn = SwitchHeadAttention(dim, n_heads, d_head, num_experts=n_experts, sel_experts=sel_experts, dropout=dropout)
+		self.moe = MoELayer(input_dim=dim,  output_dim=dim, num_experts=n_experts, sel_experts=sel_experts)
 		self.norm1 = nn.LayerNorm(dim)
 		self.norm2 = nn.LayerNorm(dim)
 		
@@ -46,13 +46,23 @@ class EncoderLayer(nn.Module):
 
 
 
-class ViT(nn.Module):
-	def __init__(self, dim=512, image_size=512, patch_size = 16, n_heads = 2, d_head = 64, depth = 6, max_dets = 100, n_experts=32, sel_experts=2, num_classes = 1000):
-		super(ViT, self).__init__()
+class ViTMoE(nn.Module):
+	def __init__(self, 
+				dim=1024,
+				image_size=256, 
+				patch_size = 32,
+				n_heads = 16,
+				d_head = 64,
+				depth = 6,
+				n_experts=32,
+				sel_experts=2, 
+				dropout=0.0, 
+				num_classes = 1000):
+		
+		super(ViTMoE, self).__init__()
 		
 		self.dim = dim
 		self.patch_size = patch_size
-		self.max_dets = max_dets
 		
 		# number of features inside a patch
 		self.patch_dim = patch_size * patch_size * 3
@@ -66,11 +76,10 @@ class ViT(nn.Module):
 
 		self.class_token = nn.Parameter(torch.randn(1, 1, dim))
 			
-	
 		num_patches = (image_size // patch_size) ** 2  
 		self.pos_enc =  nn.Parameter(torch.randn(1, num_patches + 1, dim)) # 1 extra for class token
 		
-		self.encoder = Encoder(dim, n_heads, d_head, depth)
+		self.encoder = Encoder(dim, n_heads, d_head, depth, n_experts, sel_experts, dropout)
   
 		self.norm = nn.LayerNorm(dim)
 		
@@ -96,22 +105,3 @@ class ViT(nn.Module):
 		x = self.class_embed(x)
   
 		return x
-
-if __name__=='_main__':
-	x = torch.randn(2, 3, 256, 256)
-	model = ViT(
-		dim=1024, 
-		image_size=256, 
-		patch_size=32,
-		n_heads=16,
-		d_head=64,
-		depth=6, 
-		n_experts=32, 
-		sel_experts=2,
-		num_classes=1000)
- 
-	model.eval()
-	x = model(x)
- 
-	print("**")
-	print(x.shape)

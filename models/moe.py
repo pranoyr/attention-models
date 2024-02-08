@@ -21,11 +21,11 @@ class MoELayer(nn.Module):
 		self.experts = nn.ModuleList([nn.Linear(input_dim, output_dim) for _ in range(num_experts)])
 	
 	def forward (self, inputs):
-		b , t , d = x.shape
+		b , t , d = inputs.shape
 
 		gate_logits = self.gate(inputs) 
 		weights, selected_experts = torch.topk(gate_logits, self.sel_experts)
-		weights = torch.softmax(weights, dim = -1).to(x.dtype)
+		weights = torch.softmax(weights, dim = -1).to(inputs.dtype)
 
 		# results should of shape - (b, t, d)
 		results = torch.zeros(b, t, d, device=inputs.device)
