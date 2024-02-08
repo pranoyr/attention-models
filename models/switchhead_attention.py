@@ -57,12 +57,13 @@ class SwitchHeadAttention(nn.Module):
 
 	def compute_moe(self, inputs, gate, experts):
 		# input shape - (b, t, d)
+		b , t, _ = inputs.shape
 		gate_logits = gate(inputs) 
 		weights, selected_experts = torch.topk(gate_logits, self.sel_experts)
 		weights = torch.sigmoid(weights).to(inputs.dtype)
 
 		# results should of shape - (b, t  h, d)
-		results = torch.zeros(inputs.shape[0], inputs.shape[1], self.num_heads, self.dim_head)
+		results = torch.zeros(b, t, self.num_heads, self.dim_head, device=inputs.device)
 		for i, expert in enumerate(experts):
 			batch_idx, t, h, nth_expert = torch.where(selected_experts == i)
 			results[batch_idx, t, h] += weights[batch_idx, t, h, nth_expert, None] * expert(
@@ -73,15 +74,16 @@ class SwitchHeadAttention(nn.Module):
 	
 
 	def compute_moe_o(self, inputs, gate_in, gate, experts):
-		# gate int - (b, t, d)
+		# gatein shape- (b, t, d)
 		# input shape - (b, t, h, d)
+		b , t , _ = gate_in.shape
 
 		gate_logits = gate(gate_in) 
 		weights, selected_experts = torch.topk(gate_logits, self.sel_experts)
 		weights = torch.sigmoid(weights).to(inputs.dtype)
 
 		# results should of shape - (b, t  h, d)
-		results = torch.zeros(inputs.shape[0], inputs.shape[1], self.num_heads, self.dim)
+		results = torch.zeros(b, t, self.num_heads, self.dim, device=inputs.device)
 		for i, expert in enumerate(experts):
 			batch_idx, t, h, nth_expert = torch.where(selected_experts == i)
 			results[batch_idx, t, h] += expert(inputs[batch_idx, t, h]
