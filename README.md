@@ -10,7 +10,7 @@ Implementing some of the SOTA Research Papers based on Transformers and Attentio
   * [Agent Attention](#agent-attention) 
   * [SwitchHead](#switch-head) (Accelerating transformers with Mixture Of Experts)
   * [Vision Transformer](#vision-transformer) (Image Classification Transformer)
-  * [Vision Transformer MoE](#vision-transformer-with-moe) (giTransformer with MoE Layer)
+  * [Vision Transformer MoE](#vision-transformer-with-moe) (Transformer with MoE Layer)
   * [Vector Quantised GAN](#vqgan) (VQGAN)
   * [Parti](#parti) (Google's text to image)
   * [MaskGIT](#MaskGIT) (Masked Generative Image Transformer)
