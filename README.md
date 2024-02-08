@@ -10,6 +10,7 @@ Implementing some of the SOTA Research Papers based on Transformers and Attentio
   * [Agent Attention](#agent-attention) 
   * [SwitchHead](#switch-head) (Accelerating transformers with Mixture Of Experts)
   * [Vision Transformer](#vision-transformer) (Image Classification Transformer)
+  * [Vision Transformer MoE](#vision-transformer-with-moe) (giTransformer with MoE Layer)
   * [Vector Quantised GAN](#vqgan) (VQGAN)
   * [Parti](#parti) (Google's text to image)
   * [MaskGIT](#MaskGIT) (Masked Generative Image Transformer)
@@ -138,6 +139,31 @@ out = model(img_batch)
 print(out.shape) # (b, num_classes)
 ```
 
+### Vision Transformer with MoE
+
+[Code](models/vit_moe.py)
+
+```python
+import torch
+from models import ViTMoE
+
+x = torch.randn(2, 3, 256, 256)
+model = ViTMoE(
+	dim=1024, 
+	image_size=256, 
+	patch_size=32,
+	n_heads=16,
+	d_head=64,
+	depth=6, 
+	n_experts=32, 
+	sel_experts=2,
+    dropout=0.0,
+	num_classes=1000)
+
+model.eval()
+x = model(x)
+print(x.shape) # torch.Size([2, 1000])
+```
 
 ### Parti
 
