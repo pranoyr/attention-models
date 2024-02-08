@@ -11,38 +11,36 @@ import torch.nn.functional as F
 
 
 class MoELayer(nn.Module):
-	def __init__(self, input_dim, output_dim, num_experts, sel_experts, act_fn="sigmoid"):
-		super().__init__()   
-
+	def __init__(self, input_dim, output_dim, num_experts, sel_experts):
+		super().__init__()
+  
 		self.sel_experts = sel_experts
 		self.gate =  nn.Sequential(
-					nn.Linear(input_dim, num_experts),
+					nn.Linear(input_dim, num_experts)
 				)
 		
-		self.experts = nn.Sequential(
-					nn.Linear(input_dim, output_dim * num_experts),
-					Rearrange('b t (e d) -> b t e d', d = input_dim, e=num_experts)
-				)
-		
+		self.experts = nn.ModuleList([nn.Linear(input_dim, output_dim) for _ in range(num_experts)])
+	
+	def forward (self, inputs):
+		b , t , d = x.shape
 
-	def topk_scores(self, scores, hard=False):
-		eps = scores.topk(k=self.sel_experts, dim=-1).indices
-		
-		mask = torch.zeros_like(scores).scatter_(-1, eps, 1)
-		scores = scores * mask
-		return scores
-		 
-	def forward (self, x):
-		gating_scores = torch.softmax(self.gate(x), dim=-1)
-		gating_scores = self.topk_scores(gating_scores)
+		gate_logits = self.gate(inputs) 
+		weights, selected_experts = torch.topk(gate_logits, self.sel_experts)
+		weights = torch.softmax(weights, dim = -1).to(x.dtype)
 
-		output = torch.einsum('b t e, b t e d -> b t d', gating_scores, self.experts(x))
-		return output
-
+		# results should of shape - (b, t, d)
+		results = torch.zeros(b, t, d, device=inputs.device)
+		for i, expert in enumerate(self.experts):
+			batch_idx, t, nth_expert = torch.where(selected_experts == i)
+			results[batch_idx, t] += weights[batch_idx, t, nth_expert, None] * expert(
+                inputs[batch_idx, t]
+            )
+   
+		return results
 
 if __name__ == '__main__':
-	moe = MoELayer(input_dim=512,  output_dim=512, num_experts=6, sel_experts=3)
-	x = torch.randn(2, 10, 512)  # (b, timesteps_q, dim)
+	moe = MoELayer(input_dim=512,  output_dim=512, num_experts=6, sel_experts=2)
+	x = torch.randn(2, 10, 512)  # (b, t, d)
 	output = moe(x)
 
 	print(output.shape) # (b, timesteps, dim)	
