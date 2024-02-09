@@ -20,7 +20,7 @@ model:
         d_head : 64
         depth : 6
         dropout : 0.1
-        n_experts: 6
+        n_experts: 5
         sel_experts: 1
         num_classes : 1000
 

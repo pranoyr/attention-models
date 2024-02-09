@@ -7,9 +7,7 @@ def build_trainer(cfg, model, data_loaders):
         return VQGANTrainer(cfg, model, data_loaders)
     if cfg.model.name == "muse":
         return MuseTrainer(cfg, model, data_loaders)
-    if cfg.model.name == "vit":
-        return VitTrainer(cfg, model, data_loaders)
-    if cfg.model.name == "vit_moe":
+    if cfg.model.name in ["vit", "vit_moe"]:
         return VitTrainer(cfg, model, data_loaders)
 
             
