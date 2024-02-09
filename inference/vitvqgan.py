@@ -1,11 +1,13 @@
 import torch
-from models import ViTVQGAN
+import sys
 import cv2
 import numpy as np
 from torchvision import transforms as T
 from PIL import Image
 import argparse
-import sys
+sys.path.append('.')
+from models import ViTVQGAN
+
 
 
 def restore(x):
