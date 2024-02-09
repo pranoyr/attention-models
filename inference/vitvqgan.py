@@ -5,6 +5,7 @@ import numpy as np
 from torchvision import transforms as T
 from PIL import Image
 import argparse
+import sys
 
 
 def restore(x):
@@ -13,6 +14,13 @@ def restore(x):
     x = (255*x).astype(np.uint8)
     return x
 
+
+parser = argparse.ArgumentParser(description='Process some integers.')
+parser.add_argument('--image', type=str, help='path to the image')
+parser.add_argument('--ckpt', type=str, default='outputs/vitvqgan/checkpoints/VitVQGAN.pt', help='path to the checkpoint')
+args = parser.parse_args()
+
+
 transforms = T.Compose([
     T.Resize((256, 256)),
 	T.ToTensor(),
@@ -20,6 +28,7 @@ transforms = T.Compose([
 ])
 
 
+# params
 vit_params = dict(
         dim=768,
         img_size=256,
@@ -29,29 +38,27 @@ vit_params = dict(
         depth=12,
         mlp_dim=3072,
         dropout=0)
-
-parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--image', type=str, help='path to the image')
-args = parser.parse_args()
-
-
 codebook_params = dict(codebook_size=8192, codebook_dim=32, beta=0.25)
 
+
+# model
 vitvqgan = ViTVQGAN(vit_params, codebook_params)
-
-ckpt = torch.load('outputs/vitvqgan/checkpoints/VitVQGAN.pt', map_location='cpu')
-
+# load checkpoint
+ckpt = torch.load(args.ckpt, map_location='cpu')
 vitvqgan.load_state_dict(ckpt['state_dict'])
 vitvqgan.eval()
 
+# load image
 imgs = Image.open(args.image)
 imgs = transforms(imgs)
 imgs = imgs.unsqueeze(0)
 
+# inference
 with torch.no_grad():
 	indices = vitvqgan.encode_imgs(imgs)
 	imgs = vitvqgan.decode_indices(indices)
 
+# display
 img = restore(imgs[0])
 img = img[:, :, ::-1]
 cv2.imshow('test', img)
