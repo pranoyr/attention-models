@@ -9,6 +9,8 @@ def build_trainer(cfg, model, data_loaders):
         return MuseTrainer(cfg, model, data_loaders)
     if cfg.model.name == "vit":
         return VitTrainer(cfg, model, data_loaders)
+    if cfg.model.name == "vit_moe":
+        return VitTrainer(cfg, model, data_loaders)
 
             
             
