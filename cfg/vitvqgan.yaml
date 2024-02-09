@@ -19,13 +19,13 @@ codebook:
 model:
     name: vitvqgan
     transformer:
-        dim : 512
-        patch_size : 16
-        n_heads : 8
+        dim : 768
+        patch_size : 8
+        n_heads : 12
         d_head : 64
-        depth : 8
+        depth : 12
         dropout : 0.1
-        mlp_dim: 2048
+        mlp_dim: 3072
 
 
 dataset:
