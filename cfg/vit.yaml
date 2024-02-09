@@ -15,7 +15,7 @@ model:
     dim : 512
     transformer:
         dim : 512
-        patch_size : 32
+        patch_size : 16
         n_heads : 8
         d_head : 64
         depth : 6
@@ -35,7 +35,7 @@ dataset:
         shuffle : True
         train_test_split : 0.9
     preprocessing:
-        resolution: 256
+        resolution: 512
         center_crop: False
         random_flip: False
         random_crop: False
