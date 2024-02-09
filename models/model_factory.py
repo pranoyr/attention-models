@@ -7,7 +7,7 @@ from .parti import Parti
 from .muse import MUSE
 import torch
 import logging
-from models import ViT
+from models import ViT, ViTMoE
 
 
 def load_model(model, checkpoint):
@@ -86,6 +86,22 @@ def build_model(cfg):
 			depth = cfg.model.transformer.depth,
 			n_heads = cfg.model.transformer.n_heads,
 			mlp_dim = cfg.model.transformer.mlp_dim,
+			dropout = cfg.model.transformer.dropout,
+			num_classes = cfg.model.transformer.num_classes
+		)
+		return model
+
+	if cfg.model.name == "vit_moe":
+    		# Vit
+		model = ViTMoE(
+			dim = cfg.model.transformer.dim,
+			image_size = cfg.dataset.preprocessing.resolution,
+			n_heads=cfg.model.transformer.n_heads,
+			patch_size = cfg.model.transformer.patch_size,
+			depth = cfg.model.transformer.depth,
+			n_experts=cfg.model.transformer.n_experts,
+			sel_experts=cfg.model.transformer.sel_experts,
+			dropout=cfg.model.transformer.dropout,
 			num_classes = cfg.model.transformer.num_classes
 		)
 		return model

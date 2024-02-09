@@ -22,7 +22,7 @@ class FeedForward(nn.Module):
 
 
 class ViT(nn.Module):
-    def __init__(self, dim, image_size=256, patch_size = 16, n_heads = 12, d_head = 64, depth = 12, mlp_dim=3072, num_classes = None):
+    def __init__(self, dim, image_size=256, patch_size = 16, n_heads = 12, d_head = 64, depth = 12, mlp_dim=3072, dropout=0.0, num_classes = None):
         super(ViT, self).__init__()
         
         self.dim = dim
@@ -43,7 +43,7 @@ class ViT(nn.Module):
         num_patches = (image_size // patch_size) ** 2
         self.pos_enc =  nn.Parameter(torch.randn(1, num_patches + 1, dim)) # 1 extra for class token
 
-        self.encoder = Encoder(dim, n_heads, d_head, depth)
+        self.encoder = Encoder(dim, n_heads, d_head, depth, dropout)
         self.encoder.feed_forward = FeedForward(dim, mlp_dim)
         
 

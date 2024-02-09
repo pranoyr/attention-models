@@ -47,7 +47,7 @@ class FeedForward(nn.Module):
 
 
 class Encoder(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth, dropout=0.):
+	def __init__(self, dim, n_heads, d_head, depth, dropout):
 		super().__init__()
 	
 		self.layers = nn.ModuleList([EncoderLayer(dim, n_heads, d_head, dropout) for _ in range(depth)])
