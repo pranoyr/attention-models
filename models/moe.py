@@ -25,7 +25,7 @@ class MoELayer(nn.Module):
 
 		gate_logits = self.gate(inputs) 
 		weights, selected_experts = torch.topk(gate_logits, self.sel_experts)
-		weights = torch.softmax(weights, dim = -1).to(inputs.dtype)
+		weights = torch.sigmoid(weights).to(inputs.dtype)
 
 		# results should of shape - (b, t, d)
 		results = torch.zeros(b, t, d, device=inputs.device)
