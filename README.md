@@ -157,7 +157,7 @@ model = ViTMoE(
 	depth=6, 
 	n_experts=32, 
 	sel_experts=2,
-    dropout=0.0,
+	dropout=0.0,
 	num_classes=1000)
 
 model.eval()
