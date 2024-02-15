@@ -19,6 +19,6 @@ def get_transform(cfg, is_train=True):
             t.append(T.CenterCrop(resize))
         
     t.append(T.ToTensor())
-    t.append(T.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))),
+    t.append(T.Normalize(mean=(cfg.dataset.preprocessing.mean), std=(cfg.dataset.preprocessing.std)))
     
     return T.Compose(t)
