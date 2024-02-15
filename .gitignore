@@ -1,6 +1,6 @@
 /experiments
 *.pyc
-sample.py
+sample*
 /wandb
 *.jpg
 *.pt
