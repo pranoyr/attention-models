@@ -34,7 +34,7 @@ python main.py --config=/cfg/vitvqgan.yaml
 python inference/vitvqgan.py --image <image-path> --ckpt <checkpoint-path> 
 ```
 
-Download the trained-weights and try it on your images.
+Download the pretrained weights and try it on your custom images.
 
 | Model                                                                                | size<br><sup>(pixels) | 
 | ------------------------------------------------------------------------------------ | --------------------- | 
