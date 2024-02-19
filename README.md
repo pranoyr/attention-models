@@ -29,7 +29,7 @@ python main.py --config=/cfg/vitvqgan.yaml
 ```
 
 
-## Checkpoints
+## Inference
 
 Download the checkpoints and try inference demo
 
