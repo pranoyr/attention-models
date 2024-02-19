@@ -30,6 +30,7 @@ python main.py --config=/cfg/vitvqgan.yaml
 
 
 ## Inference
+Example inference of VitVQGAN model.
 ```bash
 python inference/vitvqgan.py --image <image-path> --ckpt <checkpoint-path> 
 ```
