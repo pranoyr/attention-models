@@ -31,9 +31,16 @@ python main.py --config=/cfg/vitvqgan.yaml
 
 ## Checkpoints
 
+Download the checkpoints and try inference demo
+
+Example Usage - 
+```bash
+python inference/vitvqgan.py --image <image-path> --ckpt <checkpoint-path> 
+```
+
 | Model                                                                                | size<br><sup>(pixels) | 
 | ------------------------------------------------------------------------------------ | --------------------- | 
-| [VitVQGAN](https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt) | 256                   | 
+| [VitVQGAN](https://github.com/pranoyr/attention-models/releases/download/0.0.2/VitVQGAN.pt) | 256                   | 
 
 
 
