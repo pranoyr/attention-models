@@ -30,13 +30,11 @@ python main.py --config=/cfg/vitvqgan.yaml
 
 
 ## Inference
-
-Download the checkpoints and try inference demo
-
-Example Usage - 
 ```bash
 python inference/vitvqgan.py --image <image-path> --ckpt <checkpoint-path> 
 ```
+
+#### Download the checkpoints.
 
 | Model                                                                                | size<br><sup>(pixels) | 
 | ------------------------------------------------------------------------------------ | --------------------- | 
