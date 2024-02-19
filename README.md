@@ -30,7 +30,7 @@ python main.py --config=/cfg/vitvqgan.yaml
 
 | Model                                                                                | size<br><sup>(pixels) | 
 | ------------------------------------------------------------------------------------ | --------------------- | 
-| [YOLOv8n](https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt) | 640                   | 
+| [VitVQGAN](https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt) | 256                   | 
 
 
 
