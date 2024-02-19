@@ -30,9 +30,12 @@ python main.py --config=/cfg/vitvqgan.yaml
 
 
 ## Inference
-Example inference of VitVQGAN model.
+See the inference folder to do inference on a specific model.
+
+Here is an example inference for VitVQGAN.
+
 ```bash
-python inference/vitvqgan.py --image <image-path> --ckpt <checkpoint-path> 
+python inference/vitvqgan.py --image car.jpg --ckpt vitvqgan.pt
 ```
 
 Download the pretrained weights and try it on your custom images.
