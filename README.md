@@ -29,6 +29,10 @@ python main.py --config=/cfg/vitvqgan.yaml
 ```
 
 
+| Model                                                                                | size<br><sup>(pixels) |------------------------------------------------------------- | --------------------- | -------------------- | ------------------------------ | ----------------------------------- | ------------------ | ----------------- |
+| [VitVQVGAN](https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt) | 640                   | 
+
+
 ##  Model Usage
 
 ### Attention is All you Need

@@ -31,7 +31,7 @@ dataset:
         val_path: null
         num_workers: 4
         pin_memory: True
-        batch_size: 32
+        batch_size: 24
         persistent_workers: True
         shuffle : True
         train_test_split : 0.9
