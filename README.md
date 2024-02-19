@@ -28,6 +28,9 @@ python main.py --config=<path-to-cfg-file>
 python main.py --config=/cfg/vitvqgan.yaml
 ```
 
+
+## Checkpoints
+
 | Model                                                                                | size<br><sup>(pixels) | 
 | ------------------------------------------------------------------------------------ | --------------------- | 
 | [VitVQGAN](https://github.com/ultralytics/assets/releases/download/v8.1.0/yolov8n.pt) | 256                   | 
