@@ -37,7 +37,7 @@ class TextEncoder(torch.nn.Module):
 
 
 	def forward(self, texts: List[str]):
-		inputs = self.tokenizer(texts, return_tensors="pt", max_length=77, padding="max_length")["input_ids"]
+		inputs = self.tokenizer(texts, return_tensors="pt", max_length=self.max_length, padding="max_length")["input_ids"]
 		text_embeds = self.encoder(inputs.cuda()).last_hidden_state
 		return text_embeds
 
