@@ -4,7 +4,6 @@ import torch
 import torch.nn.functional as F
 from torch import nn, einsum
 import torchvision.transforms as T
-from models.t5 import T5Encoder, get_encoded_dim
 from einops import rearrange, repeat, pack
 from typing import Callable, Optional, List
 from models.positional_encoding import PositionalEncoding
@@ -13,6 +12,7 @@ import math
 from einops import rearrange, repeat
 from models.transformer import Decoder
 from models.vqgan import VQGAN
+from transformers import AutoTokenizer, CLIPTextModel
 
 def exists(val):
 	return val is not None
@@ -27,17 +27,22 @@ def filter_logits(logits, p=0.9):
 
 
 class TextEncoder(torch.nn.Module):
-	def __init__(self, dim, t5_name, max_length):
+	def __init__(self, dim, enc_type, enc_name, max_length):
 		super().__init__()
-	
-		self.t5_encoder = T5Encoder(t5_name, max_length)
-		text_embed_dim = get_encoded_dim(t5_name)
-		self.text_embed_proj = nn.Linear(text_embed_dim, dim, bias = False)
-	
+  
+		self.max_length = max_length
+
+		if enc_type == "clip":
+			self.encoder = CLIPTextModel.from_pretrained(enc_name)
+			self.tokenizer = AutoTokenizer.from_pretrained(enc_name)
+		else:
+			raise ValueError(f"Invalid encoder type {enc_type}")
+
 	def forward(self, texts: List[str]):
-		context_mask, text_embeds = self.t5_encoder(texts)
-		text_embeds = self.text_embed_proj(text_embeds)
-		return context_mask, text_embeds
+		inputs = self.tokenizer(texts, return_tensors="pt", max_length=77, padding="max_length")["input_ids"]
+		text_embeds = self.encoder(inputs.cuda()).last_hidden_state
+		return text_embeds
+
 
 # TODO: add classifier free guidance	
 
@@ -46,7 +51,8 @@ class Parti(nn.Module):
 		self,
 		dim,
 		vq,
-		t5_name,
+		enc_type,
+		enc_name,
 		max_length,
 		n_heads,
 		d_head,
@@ -57,7 +63,7 @@ class Parti(nn.Module):
 		self.vq = vq
 		
 		#### Text Encoder  ####
-		self.text_encoder = TextEncoder(dim, t5_name, max_length)
+		self.text_encoder = TextEncoder(dim, enc_type, enc_name, max_length)
 		self.context_norm = nn.LayerNorm(dim)
 		
 		#### Transformer Decoder ####
@@ -81,7 +87,7 @@ class Parti(nn.Module):
 		device = imgs.device
 
 		# text encoder
-		context_mask , text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
+		text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
 		text_embeds = self.context_norm(text_embeds)
   
 		# convert images to indices
@@ -103,7 +109,7 @@ class Parti(nn.Module):
 		# add init norm
 		img_token_embeds = self.init_norm(img_token_embeds)
 		# transformer decoder
-		dec_out = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask, causal_mask=causal_mask)\
+		dec_out = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, causal_mask=causal_mask)
 		# add final norm
 		dec_out = self.final_norm(dec_out)
 		# to logits
@@ -116,7 +122,7 @@ class Parti(nn.Module):
 	def generate(self, texts : List[str]):
 		b = len(texts)
 		# text encoder
-		context_mask , text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
+		text_embeds = self.text_encoder(texts) # (batch_size, seq_len, dim)
 
 		start_token = repeat(self.start_token, 'd -> b 1 d', b=b)
 		
@@ -130,7 +136,7 @@ class Parti(nn.Module):
 			img_token_embeds = torch.cat((start_token, img_token_embeds), dim=1)
 			# decoder
 			self.init_norm(img_token_embeds)
-			dec_out = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds, context_mask=context_mask)
+			dec_out = self.transformer_decoder(dec_in=img_token_embeds, context=text_embeds)
 			self.final_norm(dec_out)
 			# to logits
 			logits = self.to_logits(dec_out)

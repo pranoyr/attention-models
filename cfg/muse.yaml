@@ -72,7 +72,7 @@ lr_scheduler:
     scheduler: cosine_with_warmup
     params:
         learning_rate: ${optimizer.params.learning_rate}
-        warmup_steps: 30000
+        warmup_steps: 4000
 
 training:
     gradient_accumulation_steps: 16
