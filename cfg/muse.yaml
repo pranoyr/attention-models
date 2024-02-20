@@ -31,7 +31,8 @@ model:
     name: muse
     dim : 512
     encoder:
-        t5_name : t5-base
+        type: clip
+        name : openai/clip-vit-base-patch32
         max_length : 77
     decoder:
         patch_size : 8

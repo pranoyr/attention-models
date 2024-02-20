@@ -6,8 +6,8 @@ from einops import rearrange, repeat, pack
 from models.softmax_attention import SoftmaxAttention
 import math
 from typing import List
-from models.t5 import T5Encoder, get_encoded_dim
 from models.transformer import Decoder
+from transformers import AutoTokenizer, CLIPTextModel
 
 
 def cosine_schedule(t):
@@ -24,17 +24,22 @@ def filter_logits(logits, p=0.9):
 
 
 class TextEncoder(torch.nn.Module):
-	def __init__(self, dim, t5_name, max_length):
+	def __init__(self, dim, enc_type, enc_name, max_length):
 		super().__init__()
+  
+		self.max_length = max_length
 
-		self.t5_encoder = T5Encoder(t5_name, max_length)
-		text_embed_dim = get_encoded_dim(t5_name)
-		self.text_embed_proj = nn.Linear(text_embed_dim, dim, bias=False)
+		if enc_type == "clip":
+			self.encoder = CLIPTextModel.from_pretrained(enc_name)
+			self.tokenizer = AutoTokenizer.from_pretrained(enc_name)
+		else:
+			raise ValueError(f"Invalid encoder type {enc_type}")
+
 
 	def forward(self, texts: List[str]):
-		context_mask, text_embeds = self.t5_encoder(texts)
-		text_embeds = self.text_embed_proj(text_embeds)
-		return context_mask, text_embeds
+		inputs = self.tokenizer(texts, return_tensors="pt", max_length=77, padding="max_length")["input_ids"]
+		text_embeds = self.encoder(inputs.cuda()).last_hidden_state
+		return text_embeds
 
 
 class BidirectionalDecoder(nn.Module):
@@ -48,14 +53,14 @@ class BidirectionalDecoder(nn.Module):
 		self.final_norm = nn.LayerNorm(dim)
 		self.linear = nn.Linear(dim, codebook_size)
 
-	def forward(self, img_token_indices, context, context_mask):
+	def forward(self, img_token_indices, context):
 		# add positional encoding
 		img_token_embeds = self.token_emb(img_token_indices)
 		img_token_embeds += self.pos_enc
 
 		# bidirectional decoder
 		img_token_embeds = self.init_norm(img_token_embeds)
-		dec_out = self.decoder(dec_in=img_token_embeds, context=context, context_mask=context_mask)
+		dec_out = self.decoder(dec_in=img_token_embeds, context=context)
 		dec_out = self.final_norm(dec_out)
 		logits = self.linear(dec_out)
 		return logits
@@ -66,7 +71,8 @@ class MUSE(nn.Module):
 		self,
 		dim,
 		vq,
-		t5_name,
+		enc_type,
+		enc_name,
 		max_length,
 		n_heads,
 		d_head,
@@ -75,8 +81,11 @@ class MUSE(nn.Module):
 		super().__init__()
 
 		#### Text Encoder  ####
-		self.text_encoder = TextEncoder(dim, t5_name, max_length)
+		self.text_encoder = TextEncoder(dim, enc_type, enc_name, max_length)
 		self.context_norm = nn.LayerNorm(dim)
+		# freeze the text encoder
+		for param in self.text_encoder.parameters():
+			param.requires_grad = False
 
 		#### Vector Quantizer ####
 		self.vq = vq
@@ -111,7 +120,7 @@ class MUSE(nn.Module):
 
 	def forward(self, texts, imgs):
 		# text encoder
-		context_mask, text_embeds = self.text_encoder(texts)
+		text_embeds = self.text_encoder(texts)
 		text_embeds = self.context_norm(text_embeds)
 
 		# quantize images
@@ -121,7 +130,7 @@ class MUSE(nn.Module):
 		img_token_indices, tgt = self.fill_mask(img_token_indices)
 
 		# decoder forward
-		logits = self.decoder(img_token_indices, context=text_embeds, context_mask=context_mask)	
+		logits = self.decoder(img_token_indices, context=text_embeds)
 
 		# compute loss
 		logits = rearrange(logits, "b t c -> b c t")
@@ -133,7 +142,7 @@ class MUSE(nn.Module):
 		num_patches = self.vq.num_patches
 
 		# text encoder
-		context_mask, text_embeds = self.text_encoder(texts)
+		text_embeds = self.text_encoder(texts)
 		text_embeds = self.context_norm(text_embeds)
   
 		device = text_embeds.device
@@ -163,7 +172,7 @@ class MUSE(nn.Module):
 			ids = ids.masked_fill(mask, self.mask_token_id)
 
 			# decoder forward
-			logits = self.decoder(ids, context=text_embeds, context_mask=context_mask)
+			logits = self.decoder(ids, context=text_embeds)
 			probs = F.softmax(logits, dim = -1)
    
 			# decaying temperature

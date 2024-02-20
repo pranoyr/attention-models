@@ -312,7 +312,8 @@ vq = VQGAN(codebook_dim, codebook_size)
 # MUSE 
 dim = 512
 encoder_params = dict(
-	t5_name = "google/t5-v1_1-base",
+	enc_type = 'clip',
+	enc_name = 'openai/clip-vit-base-patch32',
 	max_length = 77
 )
  

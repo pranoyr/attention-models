@@ -64,7 +64,8 @@ def build_model(cfg):
 		# MUSE 
 		dim = cfg.model.dim
 		encoder_params = dict(
-				t5_name = cfg.model.encoder.t5_name,
+				enc_type = cfg.model.encoder.type,
+				enc_name = cfg.model.encoder.name,
 				max_length = cfg.model.encoder.max_length
 		)
 		
