@@ -52,6 +52,14 @@ class MuseTrainer(nn.Module):
 		self.model = model
 		self.train_dl , self.val_dl = dataloaders
 		self.global_step = 0
+  
+		# Resume from ckpt
+		if cfg.experiment.resume_path_from_checkpoint:
+			path = cfg.experiment.resume_path_from_checkpoint
+			ckpt = torch.load(path, map_location=self.accelerator.device)
+			self.model.load_state_dict(ckpt["state_dict"])
+			self.global_step = ckpt["step"]
+			logging.info(f"Resuming from checkpoint: {path} at step: {self.global_step}")
 		
 		# Training parameters
 		lr = cfg.optimizer.params.learning_rate
