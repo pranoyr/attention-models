@@ -22,7 +22,6 @@ def filter_logits(logits, p=0.9):
 	return filtered_logits
 
 
-
 class TextEncoder(torch.nn.Module):
 	def __init__(self, dim, enc_type, enc_name, max_length):
 		super().__init__()
@@ -83,10 +82,7 @@ class MUSE(nn.Module):
 		#### Text Encoder  ####
 		self.text_encoder = TextEncoder(dim, enc_type, enc_name, max_length)
 		self.context_norm = nn.LayerNorm(dim)
-		# freeze the text encoder
-		for param in self.text_encoder.parameters():
-			param.requires_grad = False
-
+		
 		#### Vector Quantizer ####
 		self.vq = vq
 		codebook_size = vq.codebook.codebook_size
@@ -97,6 +93,10 @@ class MUSE(nn.Module):
 		self.decoder = BidirectionalDecoder(dim, codebook_size, n_heads, d_head, depth, num_patches)
   
 		self.ignore_index = -1
+
+		# freeze the text encoder and vq
+		self.text_encoder.requires_grad_(False)
+		self.vq.requires_grad_(False)
 
 	def fill_mask(self, x, T = 18):
 		device = x.device

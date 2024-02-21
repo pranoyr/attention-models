@@ -76,6 +76,10 @@ class Parti(nn.Module):
 		self.init_norm = nn.LayerNorm(dim)
 		self.final_norm = nn.LayerNorm(dim)
 		self.to_logits = nn.Linear(dim, codebook_size)
+
+		# freeze the text encoder and vqgan
+		self.text_encoder.requires_grad_(False)
+		self.vq.requires_grad_(False)
 		
 	def forward(
 		self,

@@ -58,8 +58,6 @@ def build_model(cfg):
 		)
 		vq = ViTVQGAN(vit_params, codebook_params)
 		load_model(vq, cfg.vitvqgan.checkpoint)
-		vq.eval()
-		freeze_model(vq)
 
 		# MUSE 
 		dim = cfg.model.dim
