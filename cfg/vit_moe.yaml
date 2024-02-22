@@ -34,7 +34,7 @@ dataset:
         batch_size: 24
         persistent_workers: True
         shuffle : True
-        train_test_split : 0.95
+        train_test_split : 0.99
     preprocessing:
         resolution: 512
         center_crop: False

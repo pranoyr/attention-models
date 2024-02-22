@@ -81,11 +81,13 @@ class VitTrainer(BaseTrainer):
 						self.save_ckpt(rewrite=True)
 					
 					if not (self.global_step % self.eval_every):
+						self.model.eval()
 						outputs = torch.softmax(outputs, dim=1)
 						acc = (outputs.argmax(dim=1) == target).float().mean().item()
 						self.accelerator.log({"acc": acc}, step=self.global_step)
-
-					
+						self.evaluate()
+						self.model.train()
+      
 					if not (self.global_step % self.gradient_accumulation_steps):
 						lr = self.optim.param_groups[0]['lr']
 						self.accelerator.log({"loss": loss.item(), "lr": lr}, step=self.global_step)
@@ -97,16 +99,16 @@ class VitTrainer(BaseTrainer):
 		print("Train finished!")
   
 	def evaluate(self):
-		self.model.eval()
 		with torch.no_grad():
-			for i, batch in enumerate(self.val_dl):
-				img , target = batch
-				img = img.to(self.device)
-				outputs = self.model(img)
-				outputs = torch.softmax(outputs, dim=1)
-				acc = (outputs.argmax(dim=1) == target).float().mean().item()
-				self.accelerator.log({"val_acc": acc}, step=self.global_step)
-		self.model.train()
+			with tqdm(self.val_dl, dynamic_ncols=True, disable=not self.accelerator.is_main_process) as val_dl:
+				for i, batch in enumerate(val_dl):
+					img , target = batch
+					img = img.to(self.device)
+					target = target.to(self.device)
+					outputs = self.model(img)
+					outputs = torch.softmax(outputs, dim=1)
+					acc = (outputs.argmax(dim=1) == target).float().mean().item()
+					self.accelerator.log({"val_acc": acc}, step=self.global_step)
 		print("Validation finished!")
 
 
