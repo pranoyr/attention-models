@@ -22,7 +22,7 @@ import logging
 from transformers import get_constant_schedule_with_warmup
 from PIL import Image
 import cv2
-from .base_trainer import BaseTrainer
+from .utils.base_trainer import BaseTrainer
 
 def requires_grad(model, flag=True):
 	for p in model.parameters():

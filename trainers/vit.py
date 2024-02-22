@@ -8,7 +8,7 @@ from torch.optim import Adam
 from transformers import get_cosine_schedule_with_warmup
 from accelerate import Accelerator
 from torch.optim import AdamW
-from .base_trainer import BaseTrainer
+from .utils.base_trainer import BaseTrainer
 
 class VitTrainer(BaseTrainer):
 	def __init__(
