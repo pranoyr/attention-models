@@ -34,7 +34,7 @@ dataset:
         batch_size: 24
         persistent_workers: True
         shuffle : True
-        train_test_split : 0.9
+        train_test_split : 0.95
     preprocessing:
         resolution: 512
         center_crop: False
@@ -63,3 +63,5 @@ training:
     mixed_precision: "no"
     seed: 42
     num_epochs: 200
+    max_grad_norm: 1.0
+    
