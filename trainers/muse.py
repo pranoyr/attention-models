@@ -22,52 +22,24 @@ import logging
 from transformers import get_constant_schedule_with_warmup
 from PIL import Image
 import cv2
+from .base_trainer import BaseTrainer
 
 
-class MuseTrainer(nn.Module):
+class MuseTrainer(BaseTrainer):
 	def __init__(
 		self, 
 		cfg,
 		model,
 		dataloaders
 		):
-		super().__init__()
+		super().__init__(cfg, model, dataloaders)
   
-		self.cfg = cfg
-		
-		# init accelerator
-		self.accelerator = Accelerator(
-			mixed_precision=cfg.training.mixed_precision,
-			gradient_accumulation_steps=cfg.training.gradient_accumulation_steps,
-			log_with="wandb"
-		)
-		self.accelerator.init_trackers(
-				project_name=cfg.experiment.project_name,
-				init_kwargs={"wandb": {
-				"config" : cfg,
-				"name" : cfg.experiment.name}
-		})
-
-		# models and dataloaders
-		self.model = model
-		self.train_dl , self.val_dl = dataloaders
-		self.global_step = 0
-  
-		# Resume from ckpt
-		if cfg.experiment.resume_path_from_checkpoint:
-			path = cfg.experiment.resume_path_from_checkpoint
-			ckpt = torch.load(path, map_location=self.accelerator.device)
-			self.model.load_state_dict(ckpt["state_dict"])
-			self.global_step = ckpt["step"]
-			logging.info(f"Resuming from checkpoint: {path} at step: {self.global_step}")
-		
 		# Training parameters
 		lr = cfg.optimizer.params.learning_rate
 		warmup_steps = cfg.lr_scheduler.params.warmup_steps
 		beta1 = cfg.optimizer.params.beta1
 		beta2 = cfg.optimizer.params.beta2
-		self.gradient_accumulation_steps = cfg.training.gradient_accumulation_steps
-		
+
 		# Optimizer
 		self.optim = Adam(self.model.parameters(), lr=lr, betas=(beta1, beta2))
 	
@@ -93,30 +65,9 @@ class MuseTrainer(nn.Module):
 		self.save_every = cfg.experiment.save_every
 		self.sample_every = cfg.experiment.sample_every
 		self.log_every = cfg.experiment.log_every
-		self.max_grad_norm = 1
+		self.max_grad_norm = cfg.training.max_grad_norm
 		
-		# Checkpoint and generated images folder
-		self.checkpoint_folder = os.path.join(cfg.experiment.output_folder, 'checkpoints')
-		os.makedirs(self.checkpoint_folder, exist_ok=True)
 		
-		self.image_saved_dir = os.path.join(cfg.experiment.output_folder, 'images')
-		os.makedirs(self.image_saved_dir, exist_ok=True)
-
-
-		logging.info(f"Train dataset size: {len(self.train_dl.dataset)}")
-		logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
-
-		num_iters_per_epoch = len(self.train_dl) 
-		total_iters = self.num_epoch * num_iters_per_epoch
-		logging.info(f"Number of iterations per epoch: {num_iters_per_epoch}")
-		logging.info(f"Total training iterations: {total_iters}")
-		
-	
-	@property
-	def device(self):
-		return self.accelerator.device
-	
-	
 	def train(self):
 	 
 		start_epoch=self.global_step//len(self.train_dl)
@@ -155,30 +106,7 @@ class MuseTrainer(nn.Module):
 					
 		self.accelerator.end_training()        
 		print("Train finished!")
-		
-	def save_ckpt(self, rewrite=False):
-		"""Save checkpoint"""
-
-		filename = os.path.join(self.checkpoint_folder, f'{self.cfg.experiment.project_name}_step_{self.global_step}.pt')
-		if rewrite:
-			filename = os.path.join(self.checkpoint_folder, f'{self.cfg.experiment.project_name}.pt')
-		
-		checkpoint={
-				'step': self.global_step,
-				'state_dict': self.accelerator.unwrap_model(self.model).state_dict()
-			}
-
-		self.accelerator.save(checkpoint, filename)
-		logging.info("Saving checkpoint: %s ...", filename)
-   
-   
-	def resume_from_checkpoint(self, checkpoint_path):
-		"""Resume from checkpoint"""
-		checkpoint = self.accelerator.load(checkpoint_path)
-		self.global_step = checkpoint['step']
-		self.model.load_state_dict(checkpoint['state_dict'])
-		logging.info("Resume from checkpoint %s (global_step %d)", checkpoint_path, self.global_step)
-
+	
 
 	@torch.no_grad()
 	def evaluate(self):

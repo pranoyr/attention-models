@@ -21,7 +21,7 @@ class BaseTrainer(object):
 		dataloaders
 		):
 
-		self.cfg = cfg
+		self.project_name = cfg.experiment.project_name
 		
 		# init accelerator
 		self.accelerator = Accelerator(
@@ -41,17 +41,15 @@ class BaseTrainer(object):
 		self.train_dl , self.val_dl = dataloaders
 		self.global_step = 0
 		self.num_epoch = cfg.training.num_epochs
+		self.gradient_accumulation_steps = cfg.training.gradient_accumulation_steps
+		self.batch_size = cfg.dataset.params.batch_size
 		
-  
 		# Resume from ckpt
 		if cfg.experiment.resume_path_from_checkpoint:
 			path = cfg.experiment.resume_path_from_checkpoint
 			self.resume_from_checkpoint(path)
 	
-		self.gradient_accumulation_steps = cfg.training.gradient_accumulation_steps
-		
-		
-		
+	
 		# Checkpoint and generated images folder
 		self.checkpoint_folder = os.path.join(cfg.experiment.output_folder, 'checkpoints')
 		os.makedirs(self.checkpoint_folder, exist_ok=True)
@@ -64,7 +62,7 @@ class BaseTrainer(object):
 		logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
 
 		# effective iteration considering gradient accumulation
-		effective_batch_size = self.cfg.dataset.params.batch_size * self.gradient_accumulation_steps
+		effective_batch_size = self.batch_size * self.gradient_accumulation_steps
 		num_iters_per_epoch = math.ceil(len(self.train_dl.dataset) / effective_batch_size)
 		total_iters = self.num_epoch * num_iters_per_epoch
 		logging.info(f"Number of iterations per epoch: {num_iters_per_epoch}")
@@ -83,9 +81,9 @@ class BaseTrainer(object):
 	def save_ckpt(self, rewrite=False):
 		"""Save checkpoint"""
 
-		filename = os.path.join(self.checkpoint_folder, f'{self.cfg.experiment.project_name}_step_{self.global_step}.pt')
+		filename = os.path.join(self.checkpoint_folder, f'{self.project_name}_step_{self.global_step}.pt')
 		if rewrite:
-			filename = os.path.join(self.checkpoint_folder, f'{self.cfg.experiment.project_name}.pt')
+			filename = os.path.join(self.checkpoint_folder, f'{self.project_name}.pt')
 		
 		checkpoint={
 				'step': self.global_step,
@@ -98,7 +96,7 @@ class BaseTrainer(object):
    
 	def resume_from_checkpoint(self, checkpoint_path):
 		"""Resume from checkpoint"""
-		checkpoint = self.accelerator.load(checkpoint_path)
+		checkpoint = torch.load(checkpoint_path)
 		self.global_step = checkpoint['step']
 		self.model.load_state_dict(checkpoint['state_dict'])
 		logging.info("Resume from checkpoint %s (global_step %d)", checkpoint_path, self.global_step)

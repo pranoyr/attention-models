@@ -19,9 +19,6 @@ class VitTrainer(BaseTrainer):
 		):
 		super().__init__(cfg, model, dataloaders)
   
-		self.cfg = cfg
-	
-
 		# Training parameters
 		lr = cfg.optimizer.params.learning_rate
 		warmup_steps = cfg.lr_scheduler.params.warmup_steps
