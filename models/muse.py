@@ -37,9 +37,9 @@ class TextEncoder(torch.nn.Module):
 
 	def forward(self, texts: List[str], device = None):
 		inputs = self.tokenizer(texts, return_tensors="pt", max_length=self.max_length, padding="max_length")
-		text_indices = inputs['input_ids']
-		attention_mask = inputs['attention_mask'].bool()
-		text_embeds = self.encoder(text_indices.to(device)).last_hidden_state
+		text_indices = inputs['input_ids'].to(device)
+		attention_mask = inputs['attention_mask'].bool().to(device)
+		text_embeds = self.encoder(text_indices).last_hidden_state
 		return text_embeds, attention_mask
 
 
