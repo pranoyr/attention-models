@@ -149,12 +149,12 @@ class MUSE(nn.Module):
 		b = len(texts)
 		num_patches = self.vq.num_patches
 
+		device = "cuda" if torch.cuda.is_available() else "cpu"
+
 		# text encoder
-		text_embeds, context_mask = self.text_encoder(texts)
+		text_embeds, context_mask = self.text_encoder(texts, device=device)
 		text_embeds = self.context_norm(text_embeds)
   
-		device = text_embeds.device
-
 		# initialize decoder inputs
 		ids = torch.ones(b, num_patches, dtype=torch.long, device=device) * self.mask_token_id
 		scores = torch.zeros_like(ids).float().to(device)
@@ -181,18 +181,19 @@ class MUSE(nn.Module):
 
 			# decoder forward
 			logits = self.decoder(ids, context=text_embeds, context_mask=context_mask)
-			probs = F.softmax(logits, dim = -1)
-   
-			# decaying temperature
-			temperature = 1 / (t + 1)
-			
-			# sample with gumbel softmax
-			logits = filter_logits(logits, p=0.9)
 
 			# for classifier free guidance
 			zeros_mask = torch.zeros_like(context_mask).bool().to(device)
 			null_logits = self.decoder(ids, context=text_embeds, context_mask=zeros_mask)
 			scaled_logits = null_logits + (logits - null_logits) * 3
+
+			probs = F.softmax(scaled_logits, dim = -1)
+   
+			# decaying temperature
+			temperature = 1 / (t + 1)
+			
+			# sample with gumbel softmax
+			scaled_logits = filter_logits(scaled_logits, p=0.9)
 
 			pred_ids = F.gumbel_softmax(scaled_logits, tau = temperature, hard = False, dim = -1).argmax(dim = -1)
 
