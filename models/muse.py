@@ -8,7 +8,7 @@ import math
 from typing import List
 from models.transformer import Decoder
 from transformers import AutoTokenizer, CLIPTextModel
-
+import random
 
 def cosine_schedule(t):
 	return torch.cos(t * math.pi / 2)
@@ -35,10 +35,12 @@ class TextEncoder(torch.nn.Module):
 			raise ValueError(f"Invalid encoder type {enc_type}")
 
 
-	def forward(self, texts: List[str]):
-		inputs = self.tokenizer(texts, return_tensors="pt", max_length=self.max_length, padding="max_length")["input_ids"]
-		text_embeds = self.encoder(inputs.cuda()).last_hidden_state
-		return text_embeds
+	def forward(self, texts: List[str], device = None):
+		inputs = self.tokenizer(texts, return_tensors="pt", max_length=self.max_length, padding="max_length")
+		text_indices = inputs['input_ids']
+		attention_mask = inputs['attention_mask'].bool()
+		text_embeds = self.encoder(text_indices.to(device)).last_hidden_state
+		return text_embeds, attention_mask
 
 
 class BidirectionalDecoder(nn.Module):
@@ -52,14 +54,14 @@ class BidirectionalDecoder(nn.Module):
 		self.final_norm = nn.LayerNorm(dim)
 		self.linear = nn.Linear(dim, codebook_size)
 
-	def forward(self, img_token_indices, context):
+	def forward(self, img_token_indices, context, context_mask):
 		# add positional encoding
 		img_token_embeds = self.token_emb(img_token_indices)
 		img_token_embeds += self.pos_enc
 
 		# bidirectional decoder
 		img_token_embeds = self.init_norm(img_token_embeds)
-		dec_out = self.decoder(dec_in=img_token_embeds, context=context)
+		dec_out = self.decoder(dec_in=img_token_embeds, context=context, context_mask=context_mask)
 		dec_out = self.final_norm(dec_out)
 		logits = self.linear(dec_out)
 		return logits
@@ -80,7 +82,7 @@ class MUSE(nn.Module):
 		super().__init__()
 
 		#### Text Encoder  ####
-		self.text_encoder = TextEncoder(dim, enc_type, enc_name, max_length)
+		self.text_encoder= TextEncoder(dim, enc_type, enc_name, max_length)
 		self.context_norm = nn.LayerNorm(dim)
 		
 		#### Vector Quantizer ####
@@ -120,7 +122,8 @@ class MUSE(nn.Module):
 
 	def forward(self, texts, imgs):
 		# text encoder
-		text_embeds = self.text_encoder(texts)
+		device = imgs.device
+		text_embeds, context_mask = self.text_encoder(texts, device)
 		text_embeds = self.context_norm(text_embeds)
 
 		# quantize images
@@ -130,7 +133,12 @@ class MUSE(nn.Module):
 		img_token_indices, tgt = self.fill_mask(img_token_indices)
 
 		# decoder forward
-		logits = self.decoder(img_token_indices, context=text_embeds)
+		logits = self.decoder(img_token_indices, context=text_embeds, context_mask=context_mask)
+
+	 	# self conditioning (for classifier free guidance)
+		if random.random() < 0.1:
+			context_mask = torch.zeros_like(context_mask).bool()
+			logits = self.decoder(img_token_indices, context=text_embeds, context_mask=context_mask)
 
 		# compute loss
 		logits = rearrange(logits, "b t c -> b c t")
@@ -142,7 +150,7 @@ class MUSE(nn.Module):
 		num_patches = self.vq.num_patches
 
 		# text encoder
-		text_embeds = self.text_encoder(texts)
+		text_embeds, context_mask = self.text_encoder(texts)
 		text_embeds = self.context_norm(text_embeds)
   
 		device = text_embeds.device
@@ -172,7 +180,7 @@ class MUSE(nn.Module):
 			ids = ids.masked_fill(mask, self.mask_token_id)
 
 			# decoder forward
-			logits = self.decoder(ids, context=text_embeds)
+			logits = self.decoder(ids, context=text_embeds, context_mask=context_mask)
 			probs = F.softmax(logits, dim = -1)
    
 			# decaying temperature
@@ -180,7 +188,13 @@ class MUSE(nn.Module):
 			
 			# sample with gumbel softmax
 			logits = filter_logits(logits, p=0.9)
-			pred_ids = F.gumbel_softmax(logits, tau = temperature, hard = False, dim = -1).argmax(dim = -1)
+
+			# for classifier free guidance
+			zeros_mask = torch.zeros_like(context_mask).bool()
+			null_logits = self.decoder(ids, context=text_embeds, context_mask=zeros_mask)
+			scaled_logits = null_logits + (logits - null_logits) * 3
+
+			pred_ids = F.gumbel_softmax(scaled_logits, tau = temperature, hard = False, dim = -1).argmax(dim = -1)
 
 			# fill the masked tokens with predicted tokens
 			ids[mask] = pred_ids[mask]
