@@ -137,7 +137,7 @@ class MUSE(nn.Module):
 
 	 	# self conditioning (for classifier free guidance)
 		if random.random() < 0.1:
-			context_mask = torch.zeros_like(context_mask).bool()
+			context_mask = torch.zeros_like(context_mask).bool().to(device)
 			logits = self.decoder(img_token_indices, context=text_embeds, context_mask=context_mask)
 
 		# compute loss
@@ -190,7 +190,7 @@ class MUSE(nn.Module):
 			logits = filter_logits(logits, p=0.9)
 
 			# for classifier free guidance
-			zeros_mask = torch.zeros_like(context_mask).bool()
+			zeros_mask = torch.zeros_like(context_mask).bool().to(device)
 			null_logits = self.decoder(ids, context=text_embeds, context_mask=zeros_mask)
 			scaled_logits = null_logits + (logits - null_logits) * 3
 
