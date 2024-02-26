@@ -136,7 +136,7 @@ class MUSE(nn.Module):
 		logits = self.decoder(img_token_indices, context=text_embeds, context_mask=context_mask)
 
 	 	# self conditioning (for classifier free guidance)
-		if random.random() < 0.1:
+		if random.random() < 0.9:
 			context_mask = torch.zeros_like(context_mask).bool().to(device)
 			logits = self.decoder(img_token_indices, context=text_embeds, context_mask=context_mask)
 

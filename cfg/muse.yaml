@@ -8,7 +8,7 @@ experiment:
     sample_every: 1000
     log_every: 100
     log_level: info
-    resume_path_from_checkpoint: outputs/muse/checkpoints/MUSE.pt
+    resume_path_from_checkpoint: null
 
 
 codebook:

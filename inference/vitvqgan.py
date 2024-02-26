@@ -18,7 +18,7 @@ def restore(x):
 
 
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--image', type=str, help='path to the image')
+parser.add_argument('--image', type=str, default='data/images/scene.jpg', help='path to the image')
 parser.add_argument('--ckpt', type=str, default='outputs/vitvqgan/checkpoints/VitVQGAN.pt', help='path to the checkpoint')
 args = parser.parse_args()
 

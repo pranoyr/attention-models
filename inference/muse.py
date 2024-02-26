@@ -67,7 +67,7 @@ muse.load_state_dict(state_dict)
 muse.eval()
 
 # text input
-texts = ["a blue panther"]
+texts = ["orange"]
 
 # generate image
 imgs = muse.generate(texts)

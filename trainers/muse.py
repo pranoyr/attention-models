@@ -22,6 +22,7 @@ import logging
 from transformers import get_constant_schedule_with_warmup
 from PIL import Image
 import cv2
+import wandb
 from .utils.base_trainer import BaseTrainer
 
 
@@ -66,8 +67,7 @@ class MuseTrainer(BaseTrainer):
 		self.sample_every = cfg.experiment.sample_every
 		self.log_every = cfg.experiment.log_every
 		self.max_grad_norm = cfg.training.max_grad_norm
-		
-		
+			
 	def train(self):
 	 
 		start_epoch=self.global_step//len(self.train_dl)
@@ -80,7 +80,6 @@ class MuseTrainer(BaseTrainer):
 				
 					with self.accelerator.accumulate(self.model):
 						with self.accelerator.autocast():
-		  
 							loss = self.model(text, img)
 						
 						self.accelerator.backward(loss)
@@ -90,12 +89,11 @@ class MuseTrainer(BaseTrainer):
 						self.scheduler.step(self.global_step)
 						self.optim.zero_grad()
 						
-						
 					if not (self.global_step % self.save_every):
 						self.save_ckpt(rewrite=True)
 					
 					if not (self.global_step % self.sample_every):
-						self.evaluate()
+						self.sample_prompts()
 	  
 					if not (self.global_step % self.gradient_accumulation_steps):
 						lr = self.optim.param_groups[0]['lr']
@@ -107,21 +105,19 @@ class MuseTrainer(BaseTrainer):
 		self.accelerator.end_training()        
 		print("Train finished!")
 	
-
 	@torch.no_grad()
-	def evaluate(self):
+	def sample_prompts(self):
 		self.model.eval()
-		with tqdm(self.val_dl, dynamic_ncols=True, disable=not self.accelerator.is_local_main_process) as valid_dl:
-			for i, batch in enumerate(valid_dl):
-				img, text = batch
-	
-				if i == 10:
-					break
-			
-				img = self.model.generate(text)
-				
-				grid = make_grid(img, nrow=6, normalize=True, value_range=(-1, 1))
-				save_image(grid, os.path.join(self.image_saved_dir, f'step_{i}.png'))
+		prompts = []
+		with open("data/prompts/dalle_prompts.txt", "r") as f:
+			for line in f:
+				text = line.strip()
+				prompts.append(text)
+		imgs = self.model.generate(prompts)
+		grid = make_grid(imgs, nrow=6, normalize=True, value_range=(-1, 1))
+		# send this to wandb
+		self.accelerator.log({"samples": [wandb.Image(grid, caption="Generated samples")]})
+		save_image(grid, os.path.join(self.image_saved_dir, f'step.png'))
 		self.model.train()
 
 
