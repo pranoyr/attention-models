@@ -5,11 +5,25 @@ import torch.nn.functional as F
 from einops import rearrange, repeat, pack
 import math
 from models.transformer import Encoder as BidirectionalDecorder
-
+from models.muse import filter_logits
+from tqdm import tqdm
+from typing import Optional
+import numpy as np
+import cv2
 
 def cosine_schedule(t):
 	return torch.cos(t * math.pi / 2)
 
+
+def restore(x):
+    x = (x + 1) * 0.5
+    x = x.permute(1,2,0).detach().cpu().numpy()
+    x = (255*x).astype(np.uint8)
+    return x
+
+
+def exists(val):
+	return val is not None
 
 class MaskGitTransformer(nn.Module):
 	def __init__(
@@ -78,13 +92,13 @@ class MaskGitTransformer(nn.Module):
 		# fill x with mask_id, ignore the tokens that are not masked while computing loss
 		tgt = x.masked_fill(~mask, -1)
 		x = x.masked_fill(mask, self.mask_token_id)    
-		return x, tgt
+		return x, tgt, mask
 
 	def forward(self, imgs):
 		# quantize images
 		x = self.vq.encode_imgs(imgs)
 		
-		x, tgt = self.fill_mask(x)
+		x, tgt, _ = self.fill_mask(x)
 		x = self.input_proj(x)
 		x += self.pos_enc
 
@@ -103,3 +117,68 @@ class MaskGitTransformer(nn.Module):
 		output = rearrange(output, 'b t c -> b c t')
 		loss = torch.nn.functional.cross_entropy(output, tgt, ignore_index=-1)
 		return loss    
+
+	def generate(self, imgs : Optional[torch.Tensor] = None, timesteps = 18):
+		     
+		num_patches = self.vq.num_patches
+
+		device = "cuda" if torch.cuda.is_available() else "cpu"
+		b = 1
+
+		# initialize decoder inputs
+		ids = torch.ones(b, num_patches, dtype=torch.long, device=device) * self.mask_token_id
+		scores = torch.zeros_like(ids).float().to(device)
+		mask = torch.zeros_like(ids).bool().to(device)
+  
+  
+		if exists(imgs):
+			# quantize images
+			ids = self.vq.encode_imgs(imgs)
+			ids , _, mask = self.fill_mask(ids)
+			# print number of true
+			print(f"Number of Tokens Masked: {mask.sum()}")
+			scores = torch.zeros_like(ids).float().to(device)
+
+
+		b , n = ids.shape
+
+		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
+			# mask the low probability tokens with mask_id
+			ids = ids.masked_fill(mask, self.mask_token_id)
+   
+			# replace all masked tokens with 100 for visualization
+			ids2 = ids.masked_fill(mask, 100)
+			decoded_imgs = self.vq.decode_indices(ids2)
+			# display
+			img = restore(decoded_imgs[0])
+			img = img[:, :, ::-1]
+			cv2.imshow('test1', img)
+			# cv2.waitKey(0)
+						
+			# decoder forward
+			x = self.input_proj(ids)
+			x += self.pos_enc
+			x = self.init_norm(x)
+			logits = self.decoder(x)
+			logits = self.final_norm(logits)
+			logits = self.linear(logits)
+
+			probs = F.softmax(logits, dim = -1)
+   
+			# decaying temperature
+			temperature = 1 * (steps_until_x0 / timesteps) # temperature is annealed
+			
+			# sample with gumbel softmax
+			logits = filter_logits(logits, p=0.9)
+
+			pred_ids = F.gumbel_softmax(logits, tau = 1, hard = False, dim = -1).argmax(dim = -1)
+
+			# fill the masked tokens with predicted tokens
+			ids[mask] = pred_ids[mask]
+			
+			# update scores
+			scores = probs.gather(2, rearrange(pred_ids, 'b t -> b t 1'))
+			scores = rearrange(scores, 'b t 1 -> b t')
+			
+		imgs = self.vq.decode_indices(ids)
+		return imgs
