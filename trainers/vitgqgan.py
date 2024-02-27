@@ -63,9 +63,12 @@ class VQGANTrainer(BaseTrainer):
 		self.discr = NLayerDiscriminator(input_nc=3, ndf=64, n_layers=3)
 		
 		# Optimizer
-		self.g_optim = Adam(self.vqvae.parameters(), lr=lr, betas=(beta1, beta2))
+		self.g_optim = Adam(self.model.parameters(), lr=lr, betas=(beta1, beta2))
 		self.d_optim = Adam(self.discr.parameters(), lr=lr, betas=(beta1, beta2))
-	
+  
+  
+		num_iters_per_epoch = math.ceil(len(self.train_dl.dataset))
+		total_iters = self.num_epoch * num_iters_per_epoch
 		self.g_sched = CosineLRScheduler(self.g_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
 		self.d_sched = CosineLRScheduler(self.d_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
 
@@ -79,7 +82,7 @@ class VQGANTrainer(BaseTrainer):
 		self.d_weight = 0.1
 		
 		(
-			self.vqvae,
+			self.model,
 			self.discr,
 			self.g_optim,
 			self.d_optim,
@@ -88,7 +91,7 @@ class VQGANTrainer(BaseTrainer):
 			self.train_dl
 	
 		) = self.accelerator.prepare(
-			self.vqvae,
+			self.model,
 			self.discr,
 			self.g_optim,
 			self.d_optim,
@@ -140,11 +143,11 @@ class VQGANTrainer(BaseTrainer):
 						img = batch
 					img = img.to(self.device)
 					# discriminator part
-					requires_grad(self.vqvae, False)
+					requires_grad(self.model, False)
 					requires_grad(self.discr, True)
 					with self.accelerator.accumulate(self.discr):
 						with self.accelerator.autocast():
-							rec, codebook_loss = self.vqvae(img)
+							rec, codebook_loss = self.model(img)
 		
 							fake_pred = self.discr(rec)
 							real_pred = self.discr(img)
@@ -161,11 +164,11 @@ class VQGANTrainer(BaseTrainer):
 						
 					
 					# generator part
-					requires_grad(self.vqvae, True)
+					requires_grad(self.model, True)
 					requires_grad(self.discr, False)
-					with self.accelerator.accumulate(self.vqvae):
+					with self.accelerator.accumulate(self.model):
 						with self.accelerator.autocast():
-							rec, codebook_loss = self.vqvae(img)
+							rec, codebook_loss = self.model(img)
 							# reconstruction loss
 							rec_loss = F.l1_loss(rec, img) + F.mse_loss(rec, img)
 							# perception loss
@@ -177,7 +180,7 @@ class VQGANTrainer(BaseTrainer):
 						
 						self.accelerator.backward(loss)
 						if self.accelerator.sync_gradients:
-							self.accelerator.clip_grad_norm_(self.vqvae.parameters(), self.max_grad_norm)
+							self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
 						self.g_optim.step()
 						self.g_sched.step(self.global_step)
 						self.g_optim.zero_grad()   
@@ -204,7 +207,7 @@ class VQGANTrainer(BaseTrainer):
 
 	@torch.no_grad()
 	def evaluate(self):
-		self.vqvae.eval()
+		self.model.eval()
 		with tqdm(self.val_dl, dynamic_ncols=True, disable=not self.accelerator.is_local_main_process) as valid_dl:
 			for i, batch in enumerate(valid_dl):
 				if isinstance(batch, tuple) or isinstance(batch, list):
@@ -214,14 +217,14 @@ class VQGANTrainer(BaseTrainer):
 				if i == 10:
 					break
 				img = img.to(self.device)
-				rec, _ = self.vqvae(img)
+				rec, _ = self.model(img)
 				imgs_and_recs = torch.stack((img, rec), dim=0)
 				imgs_and_recs = rearrange(imgs_and_recs, 'r b ... -> (b r) ...')
 				imgs_and_recs = imgs_and_recs.detach().cpu().float()
 
 				grid = make_grid(imgs_and_recs, nrow=6, normalize=True, value_range=(-1, 1))
 				save_image(grid, os.path.join(self.image_saved_dir, f'step_{i}.png'))
-		self.vqvae.train()
+		self.model.train()
 
 
 

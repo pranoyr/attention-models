@@ -4,7 +4,7 @@ from .vit import VitTrainer
 from .maskgit import MaskGitTrainer
 
 def build_trainer(cfg, model, data_loaders):
-    if cfg.model.name == "vitvqgan":
+    if cfg.model.name in ["vqgan", "vitvqgan"]:
         return VQGANTrainer(cfg, model, data_loaders)
     if cfg.model.name == "muse":
         return MuseTrainer(cfg, model, data_loaders)

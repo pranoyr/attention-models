@@ -39,6 +39,14 @@ def build_model(cfg):
 		)
 		model = ViTVQGAN(vit_params, codebook_params)
 		return model
+		
+	if cfg.model.name == "vqgan":
+		
+		codebook_dim = cfg.codebook.codebook_dim
+		codebook_size = cfg.codebook.codebook_size
+  
+		model = VQGAN(codebook_dim, codebook_size)
+		return model
 
 	if cfg.model.name == "muse":
 
