@@ -143,9 +143,7 @@ class MaskGitTransformer(nn.Module):
 		b , n = ids.shape
 
 		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
-			# mask the low probability tokens with mask_id
-			ids = ids.masked_fill(mask, self.mask_token_id)
-   
+		
 			# replace all masked tokens with 100 for visualization
 			ids2 = ids.masked_fill(mask, 100)
 			decoded_imgs = self.vq.decode_indices(ids2)
