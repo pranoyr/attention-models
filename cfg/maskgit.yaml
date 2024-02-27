@@ -1,7 +1,7 @@
 experiment:
     name: run1
-    project_name: MUSE
-    output_folder: outputs/muse
+    project_name: MaskGit
+    output_folder: outputs/maskgit
     max_train_examples: 1000000
     save_every: 1000
     eval_every: 500
@@ -28,16 +28,11 @@ vitvqgan:
         mlp_dim: 3072
 
 model:
-    name: muse
+    name: maskgit
     dim : 512
-    encoder:
-        type: clip
-        name : openai/clip-vit-base-patch32
-        max_length : 77
-    decoder:
-        n_heads : 8
-        d_head : 64
-        depth : 6
+    n_heads : 8
+    d_head : 64
+    depth : 6
 
 dataset:
     name: coco

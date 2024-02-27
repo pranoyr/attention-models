@@ -9,6 +9,7 @@ from typing import List
 from models.transformer import Decoder
 from transformers import AutoTokenizer, CLIPTextModel
 import random
+from tqdm import tqdm
 
 def cosine_schedule(t):
 	return torch.cos(t * math.pi / 2)
@@ -20,6 +21,9 @@ def filter_logits(logits, p=0.9):
 	filtered_logits = torch.full_like(logits, float('-inf'))
 	filtered_logits.scatter_(2, ind, val)
 	return filtered_logits
+
+def uniform(shape, min = 0, max = 1, device = None):
+    return torch.zeros(shape, device = device).float().uniform_(0, 1)
 
 
 class TextEncoder(torch.nn.Module):
@@ -105,14 +109,17 @@ class MUSE(nn.Module):
 
 		# sample the timestep from uniform distribution
 		b, n = x.shape
-		t = torch.randint(0, T, (1,))
-		num_tokens_masked = cosine_schedule(t / T) * n
-		num_tokens_masked = num_tokens_masked.clamp(min=1.0).int()
-		num_tokens_masked = num_tokens_masked.to(device)
+		# t = torch.randint(0, T, (1,))
+		# num_tokens_masked = cosine_schedule(t / T) * n
+		# num_tokens_masked = num_tokens_masked.clamp(min=1.0).int()
+		# num_tokens_masked = num_tokens_masked.to(device)
+		rand_time = uniform((b,), device = device)
+		rand_mask_probs = cosine_schedule(rand_time)
+		num_tokens_masked = (n * rand_mask_probs).round().clamp(min = 1)
 
 		# create mask
-		randm_perm = torch.rand(x.shape).argsort(dim=-1).to(device)
-		mask = randm_perm < num_tokens_masked
+		randm_perm = torch.rand((b, n), device = device).argsort(dim = -1)
+		mask = randm_perm < rearrange(num_tokens_masked, 'b -> b 1')
 
 		# ignore the tokens that are not masked while computing loss
 		tgt = x.masked_fill(~mask, self.ignore_index)
@@ -162,11 +169,10 @@ class MUSE(nn.Module):
 
 		b , n = ids.shape
 
-		for t in torch.arange(0, timesteps):
-			# number of tokens to mask with cosine schedule
-			num_tokens_masked = cosine_schedule(t / timesteps) * n
-			num_tokens_masked = num_tokens_masked.clamp(min = 1.).int()
-			
+		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
+    		# number of tokens to mask with cosine schedule
+			rand_mask_prob = cosine_schedule(timestep)
+			num_tokens_masked = max(int((rand_mask_prob * n).item()), 1)
 			# find low probability tokens
 			low_probs_indices = torch.argsort(scores, dim = -1)
 			
@@ -190,7 +196,7 @@ class MUSE(nn.Module):
 			probs = F.softmax(scaled_logits, dim = -1)
    
 			# decaying temperature
-			temperature = 1 / (t + 1)
+			temperature = 1 * (steps_until_x0 / timesteps) # temperature is annealed
 			
 			# sample with gumbel softmax
 			scaled_logits = filter_logits(scaled_logits, p=0.9)

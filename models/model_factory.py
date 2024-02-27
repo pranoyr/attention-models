@@ -5,6 +5,7 @@ from .vit import ViT
 from .transformer import Transformer
 from .parti import Parti
 from .muse import MUSE
+from .maskgit import MaskGitTransformer
 import torch
 import logging
 from models import ViT, ViTMoE
@@ -74,6 +75,37 @@ def build_model(cfg):
 
 
 		model = MUSE(dim, vq, **encoder_params, **decoder_params)
+		return model
+	
+	if cfg.model.name == "maskgit":
+		# ViTVQGAN
+		vit_params = dict(
+			dim = cfg.vitvqgan.transformer.dim,
+			img_size = cfg.dataset.preprocessing.resolution,
+			patch_size = cfg.vitvqgan.transformer.patch_size,
+			n_heads = cfg.vitvqgan.transformer.n_heads,
+			d_head = cfg.vitvqgan.transformer.d_head,
+			depth = cfg.vitvqgan.transformer.depth,
+			mlp_dim = cfg.vitvqgan.transformer.mlp_dim,
+			dropout = cfg.vitvqgan.transformer.dropout
+		)
+		codebook_params = dict(
+			codebook_dim = cfg.codebook.codebook_dim,
+			codebook_size = cfg.codebook.codebook_size
+		)
+		vq = ViTVQGAN(vit_params, codebook_params)
+		load_model(vq, cfg.vitvqgan.checkpoint)
+
+		# MaskGit 
+		dim = cfg.model.dim
+		# MaskGitTransformer
+		model = MaskGitTransformer(
+			dim=dim,
+			vq=vq,
+			vocab_size=cfg.codebook.codebook_size,
+			n_heads=cfg.model.n_heads,
+			d_head=cfg.model.d_head,
+			dec_depth=cfg.model.depth)
 		return model
 	
 	if cfg.model.name == "vit":
