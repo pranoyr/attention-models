@@ -116,7 +116,7 @@ class MaskGitTransformer(nn.Module):
 		
 		# fill x with mask_id, ignore the tokens that are not masked while computing loss
 		tgt = x.masked_fill(~mask, -1)
-		x = x.masked_fill(mask, self.mask_token_id)    
+		# x = x.masked_fill(mask, self.mask_token_id)    
 		return x, tgt, mask
 
 	def forward(self, imgs):
@@ -167,7 +167,7 @@ class MaskGitTransformer(nn.Module):
 
 		b , n = ids.shape
   
-  
+
 		ids2 = ids.masked_fill(mask, 100)
 		decoded_imgs = self.vq.decode_indices(ids2)
 		# display
@@ -176,7 +176,9 @@ class MaskGitTransformer(nn.Module):
 		cv2.imshow('masked', img)
 
 		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
-						
+			
+		
+			x = ids.masked_fill(mask, self.mask_token_id)    
 			# decoder forward
 			x = self.input_proj(ids)
 			x += self.pos_enc
@@ -202,10 +204,12 @@ class MaskGitTransformer(nn.Module):
 			scores = probs.gather(2, rearrange(pred_ids, 'b t -> b t 1'))
 			scores = rearrange(scores, 'b t 1 -> b t')
    
+			num_tokens_masked = mask.sum()// 2
+   
 			mask = torch.zeros_like(ids).bool()
 
 			# rand_mask_prob = cosine_schedule(timestep)
-			num_tokens_masked = mask.sum()// 2
+	
 			# find low probability tokens
 			low_probs_indices = torch.argsort(scores, dim = -1)
 
@@ -214,6 +218,8 @@ class MaskGitTransformer(nn.Module):
 
 			# True where the tokens are masked, False otherwise
 			mask.scatter_(1, masked_indices, True)
+   
+
 			
 		imgs = self.vq.decode_indices(ids)
 		return imgs
