@@ -72,5 +72,5 @@ imgs = transformer.generate(img, 8)
 # display
 img = restore(imgs[0])
 img = img[:, :, ::-1]
-cv2.imshow('test', img)
+cv2.imshow('result', img)
 cv2.waitKey(0)

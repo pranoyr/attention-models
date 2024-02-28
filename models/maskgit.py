@@ -94,6 +94,31 @@ class MaskGitTransformer(nn.Module):
 		x = x.masked_fill(mask, self.mask_token_id)    
 		return x, tgt, mask
 
+	def fill_custom_mask(self, x):
+		T = 8  # max number of timesteps during inference
+		# sample the timestep from uniform distribution
+		b , n = x.shape
+		t = torch.tensor([7])
+		num_tokens_masked = cosine_schedule(t / T) * n
+		num_tokens_masked = num_tokens_masked.clamp(min = 1.).int()
+
+		# create mask 
+		randm_perm = torch.rand(x.shape).argsort(dim = -1)
+		mask = randm_perm < num_tokens_masked
+		mask = torch.zeros(x.shape).bool()
+		# put first 200 as True
+		mask[:, :200] = True
+		# put last 200 as True
+		mask[:, -200:] = True
+
+		mask = mask.cuda()
+  
+		
+		# fill x with mask_id, ignore the tokens that are not masked while computing loss
+		tgt = x.masked_fill(~mask, -1)
+		x = x.masked_fill(mask, self.mask_token_id)    
+		return x, tgt, mask
+
 	def forward(self, imgs):
 		# quantize images
 		x = self.vq.encode_imgs(imgs)
@@ -134,24 +159,23 @@ class MaskGitTransformer(nn.Module):
 		if exists(imgs):
 			# quantize images
 			ids = self.vq.encode_imgs(imgs)
-			ids , _, mask = self.fill_mask(ids)
+			ids , _, mask = self.fill_custom_mask(ids)
 			# print number of true
 			print(f"Number of Tokens Masked: {mask.sum()}")
 			scores = torch.zeros_like(ids).float().to(device)
 
 
 		b , n = ids.shape
+  
+  
+		ids2 = ids.masked_fill(mask, 100)
+		decoded_imgs = self.vq.decode_indices(ids2)
+		# display
+		img = restore(decoded_imgs[0])
+		img = img[:, :, ::-1]
+		cv2.imshow('masked', img)
 
 		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
-		
-			# replace all masked tokens with 100 for visualization
-			ids2 = ids.masked_fill(mask, 100)
-			decoded_imgs = self.vq.decode_indices(ids2)
-			# display
-			img = restore(decoded_imgs[0])
-			img = img[:, :, ::-1]
-			cv2.imshow('test1', img)
-			# cv2.waitKey(0)
 						
 			# decoder forward
 			x = self.input_proj(ids)
@@ -169,7 +193,7 @@ class MaskGitTransformer(nn.Module):
 			# sample with gumbel softmax
 			logits = filter_logits(logits, p=0.9)
 
-			pred_ids = F.gumbel_softmax(logits, tau = 1, hard = False, dim = -1).argmax(dim = -1)
+			pred_ids = F.gumbel_softmax(logits, tau = temperature, hard = False, dim = -1).argmax(dim = -1)
 
 			# fill the masked tokens with predicted tokens
 			ids[mask] = pred_ids[mask]
@@ -177,6 +201,19 @@ class MaskGitTransformer(nn.Module):
 			# update scores
 			scores = probs.gather(2, rearrange(pred_ids, 'b t -> b t 1'))
 			scores = rearrange(scores, 'b t 1 -> b t')
+   
+			mask = torch.zeros_like(ids).bool()
+
+			# rand_mask_prob = cosine_schedule(timestep)
+			num_tokens_masked = mask.sum()// 2
+			# find low probability tokens
+			low_probs_indices = torch.argsort(scores, dim = -1)
+
+			# indices of tokens to mask
+			masked_indices = low_probs_indices[:, :num_tokens_masked]
+
+			# True where the tokens are masked, False otherwise
+			mask.scatter_(1, masked_indices, True)
 			
 		imgs = self.vq.decode_indices(ids)
 		return imgs
