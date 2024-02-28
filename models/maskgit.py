@@ -177,7 +177,7 @@ class MaskGitTransformer(nn.Module):
 
 		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
 			
-		
+			print(mask.sum())
 			x = ids.masked_fill(mask, self.mask_token_id)    
 			# decoder forward
 			x = self.input_proj(ids)
@@ -205,6 +205,9 @@ class MaskGitTransformer(nn.Module):
 			scores = rearrange(scores, 'b t 1 -> b t')
    
 			num_tokens_masked = mask.sum()// 2
+			# rand_mask_prob = cosine_schedule(timestep)
+			# num_tokens_masked = max(int((rand_mask_prob * n).item()), 1)
+			# num_tokens_masked = cosine_schedule(torch.tensor(num_tokens_masked))
    
 			mask = torch.zeros_like(ids).bool()
 
