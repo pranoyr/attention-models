@@ -64,7 +64,7 @@ ckpt = torch.load(args.ckpt)
 transformer.load_state_dict(ckpt['state_dict'])
 
 
-img = Image.open('data/images/scene.jpg')
+img = Image.open('data/images/000000000771.jpg')
 img = transforms(img).unsqueeze(0).to(device)
 # generate image
 imgs = transformer.generate(img, 8)
