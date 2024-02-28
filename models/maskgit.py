@@ -107,7 +107,7 @@ class MaskGitTransformer(nn.Module):
 		mask = randm_perm < num_tokens_masked
 		mask = torch.zeros(x.shape).bool()
 		# put first 200 as True
-		mask[:, :200] = True
+		mask[:, :100] = True
 		# put last 200 as True
 		mask[:, -200:] = True
 
@@ -174,13 +174,14 @@ class MaskGitTransformer(nn.Module):
 		img = restore(decoded_imgs[0])
 		img = img[:, :, ::-1]
 		cv2.imshow('masked', img)
-
+		
+		outputs = []
 		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
 			
 			print(mask.sum())
 			x = ids.masked_fill(mask, self.mask_token_id)    
 			# decoder forward
-			x = self.input_proj(ids)
+			x = self.input_proj(x)
 			x += self.pos_enc
 			x = self.init_norm(x)
 			logits = self.decoder(x)
@@ -206,8 +207,8 @@ class MaskGitTransformer(nn.Module):
    
 			num_tokens_masked = mask.sum()// 2
 			# rand_mask_prob = cosine_schedule(timestep)
-			# num_tokens_masked = max(int((rand_mask_prob * n).item()), 1)
-			# num_tokens_masked = cosine_schedule(torch.tensor(num_tokens_masked))
+			# num_tokens_masked = max(int((rand_mask_prob * 500).item()), 1)
+
    
 			mask = torch.zeros_like(ids).bool()
 
@@ -222,7 +223,13 @@ class MaskGitTransformer(nn.Module):
 			# True where the tokens are masked, False otherwise
 			mask.scatter_(1, masked_indices, True)
    
+			decoded_imgs = self.vq.decode_indices(ids)
+			# display
+			img = restore(decoded_imgs[0])
+			img = img[:, :, ::-1]
+			outputs.append(img)
 
-			
+		outputs  = np.hstack(outputs)
+		cv2.imshow('iterations', outputs)
 		imgs = self.vq.decode_indices(ids)
 		return imgs
