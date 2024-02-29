@@ -165,15 +165,15 @@ class MaskGitTransformer(nn.Module):
 			scores = torch.zeros_like(ids).float().to(device)
 
 
-		b , n = ids.shape
-  
+			b , n = ids.shape
+	
 
-		ids2 = ids.masked_fill(mask, 100)
-		decoded_imgs = self.vq.decode_indices(ids2)
-		# display
-		img = restore(decoded_imgs[0])
-		img = img[:, :, ::-1]
-		cv2.imshow('masked', img)
+			ids2 = ids.masked_fill(mask, 100)
+			decoded_imgs = self.vq.decode_indices(ids2)
+			# display
+			img = restore(decoded_imgs[0])
+			img = img[:, :, ::-1]
+			cv2.imshow('masked', img)
 		
 		outputs = []
 		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
