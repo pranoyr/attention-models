@@ -51,12 +51,12 @@ vitvqgan.eval()
 
 # MaskGitTransformer
 transformer = MaskGitTransformer(
-	dim=512,
+	dim=768,
 	vq=vitvqgan,
 	vocab_size=8192,
-	n_heads=8,
+	n_heads=12,
 	d_head=64,
-	dec_depth=6)
+	dec_depth=12)
 transformer = transformer.to(device)
 transformer.eval()
 # load model
@@ -67,10 +67,11 @@ transformer.load_state_dict(ckpt['state_dict'])
 img = Image.open('data/images/000000000771.jpg')
 img = transforms(img).unsqueeze(0).to(device)
 # generate image
-imgs = transformer.generate(img, 8)
+imgs = transformer.generate(img, num_masked=300, timesteps=8)
 
 # display
 img = restore(imgs[0])
 img = img[:, :, ::-1]
-cv2.imshow('result', img)
-cv2.waitKey(0)
+# cv2.imshow('result', img)
+# cv2.waitKey(0)
+cv2.imwrite('outputs/maskgit/test_outputs/final.jpg', img)

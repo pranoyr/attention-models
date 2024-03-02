@@ -4,7 +4,7 @@ import copy
 import torch.nn.functional as F
 from einops import rearrange, repeat, pack
 import math
-from models.transformer import Encoder as BidirectionalDecorder
+from models.transformer import Decoder as BidirectionalDecorder
 from models.muse import filter_logits
 from tqdm import tqdm
 from typing import Optional
@@ -94,7 +94,7 @@ class MaskGitTransformer(nn.Module):
 		x = x.masked_fill(mask, self.mask_token_id)    
 		return x, tgt, mask
 
-	def fill_custom_mask(self, x):
+	def fill_custom_mask(self, x, num_masked = 200):
 		T = 8  # max number of timesteps during inference
 		# sample the timestep from uniform distribution
 		b , n = x.shape
@@ -107,9 +107,9 @@ class MaskGitTransformer(nn.Module):
 		mask = randm_perm < num_tokens_masked
 		mask = torch.zeros(x.shape).bool()
 		# put first 200 as True
-		mask[:, :100] = True
+		mask[:, :num_masked] = True
 		# put last 200 as True
-		mask[:, -200:] = True
+		# mask[:, -200:] = True
 
 		mask = mask.cuda()
   
@@ -129,7 +129,7 @@ class MaskGitTransformer(nn.Module):
 
 		# transformer decoder
 		x = self.init_norm(x)
-		dec_out = self.decoder(x)
+		dec_out = self.decoder(x, context=None)
 		dec_out = self.final_norm(dec_out)
 		output = self.linear(dec_out)
 
@@ -143,7 +143,7 @@ class MaskGitTransformer(nn.Module):
 		loss = torch.nn.functional.cross_entropy(output, tgt, ignore_index=-1)
 		return loss    
 
-	def generate(self, imgs : Optional[torch.Tensor] = None, timesteps = 18):
+	def generate(self, imgs : Optional[torch.Tensor] = None, num_masked=200,  timesteps = 18):
 		     
 		num_patches = self.vq.num_patches
 
@@ -159,7 +159,7 @@ class MaskGitTransformer(nn.Module):
 		if exists(imgs):
 			# quantize images
 			ids = self.vq.encode_imgs(imgs)
-			ids , _, mask = self.fill_custom_mask(ids)
+			ids , _, mask = self.fill_custom_mask(ids, num_masked)
 			# print number of true
 			print(f"Number of Tokens Masked: {mask.sum()}")
 			scores = torch.zeros_like(ids).float().to(device)
@@ -173,18 +173,18 @@ class MaskGitTransformer(nn.Module):
 			# display
 			img = restore(decoded_imgs[0])
 			img = img[:, :, ::-1]
-			cv2.imshow('masked', img)
+			cv2.imwrite('outputs/maskgit/test_outputs/masked.jpg', img)
 		
 		outputs = []
 		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
 			
-			print(mask.sum())
+			
 			x = ids.masked_fill(mask, self.mask_token_id)    
 			# decoder forward
 			x = self.input_proj(x)
 			x += self.pos_enc
 			x = self.init_norm(x)
-			logits = self.decoder(x)
+			logits = self.decoder(x, context=None)
 			logits = self.final_norm(logits)
 			logits = self.linear(logits)
 
@@ -201,35 +201,42 @@ class MaskGitTransformer(nn.Module):
 			# fill the masked tokens with predicted tokens
 			ids[mask] = pred_ids[mask]
 			
+			
 			# update scores
 			scores = probs.gather(2, rearrange(pred_ids, 'b t -> b t 1'))
 			scores = rearrange(scores, 'b t 1 -> b t')
+			# scores = scores.masked_fill(~mask, 1.0)
+			scores = scores.masked_fill(~mask, 1.0)
    
-			num_tokens_masked = mask.sum()// 2
+			num_tokens_masked = mask.sum()//2
+			print(num_tokens_masked)
 			# rand_mask_prob = cosine_schedule(timestep)
-			# num_tokens_masked = max(int((rand_mask_prob * 500).item()), 1)
+			# num_tokens_masked = max(int((rand_mask_prob * num_masked).item()), 1)
+			# print(num_tokens_masked)
+			
 
-   
-			mask = torch.zeros_like(ids).bool()
-
-			# rand_mask_prob = cosine_schedule(timestep)
-	
-			# find low probability tokens
-			low_probs_indices = torch.argsort(scores, dim = -1)
-
+			low_probs_indices = torch.argsort(scores, dim = -1)	
+			# print(low_probs_indices.shape)
+			# print(num_tokens_masked)
+			# print()
+			
 			# indices of tokens to mask
 			masked_indices = low_probs_indices[:, :num_tokens_masked]
 
+			mask = torch.zeros_like(ids).bool().to(device)
+			
 			# True where the tokens are masked, False otherwise
 			mask.scatter_(1, masked_indices, True)
-   
+
+
 			decoded_imgs = self.vq.decode_indices(ids)
 			# display
 			img = restore(decoded_imgs[0])
 			img = img[:, :, ::-1]
 			outputs.append(img)
 
+
 		outputs  = np.hstack(outputs)
-		cv2.imshow('iterations', outputs)
+		cv2.imwrite('outputs/maskgit/test_outputs/iterations.jpg', outputs)
 		imgs = self.vq.decode_indices(ids)
 		return imgs
