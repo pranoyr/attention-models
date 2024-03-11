@@ -64,8 +64,8 @@ class EncoderLayer(nn.Module):
 
 		self.self_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
 		self.feed_forward = FeedForward(dim)
-		self.norm1 = nn.LayerNorm(dim)
-		self.norm2 = nn.LayerNorm(dim)
+		self.norm1 = LayerNorm(dim)
+		self.norm2 = LayerNorm(dim)
 		
 	def forward(self, x, context_mask=None):
 		x_norm = self.norm1(x)
@@ -107,9 +107,9 @@ class DecoderLayer(nn.Module):
 		self.cross_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
 		
 		self.feed_forward = FeedForward(dim)
-		self.norm1 = nn.LayerNorm(dim)
-		self.norm2 = nn.LayerNorm(dim)
-		self.norm3 = nn.LayerNorm(dim)
+		self.norm1 = LayerNorm(dim)
+		self.norm2 = LayerNorm(dim)
+		self.norm3 = LayerNorm(dim)
 
 	def forward(self, dec_inp, context, context_mask=None, causal_mask=None):
 		dec_inp_norm = self.norm1(dec_inp)

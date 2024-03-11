@@ -4,7 +4,7 @@ import copy
 import torch.nn.functional as F
 from einops import rearrange, repeat, pack
 import math
-from models.transformer import Decoder as BidirectionalDecorder
+from models.transformer import Decoder 
 from models.muse import filter_logits
 from tqdm import tqdm
 from typing import Optional
@@ -13,6 +13,28 @@ import cv2
 
 def cosine_schedule(t):
 	return torch.cos(t * math.pi / 2)
+
+
+class LayerNorm(nn.Module):
+	def __init__(self, dim):
+		super().__init__()
+		self.gamma = nn.Parameter(torch.ones(dim))
+		# we don't want to update this
+		self.register_buffer("beta", torch.zeros(dim))
+
+	def forward(self, x):
+		return F.layer_norm(x, x.shape[-1:], self.gamma, self.beta)
+
+
+def weights_init(m):
+    classname = m.__class__.__name__
+    if "Linear" in classname or "Embedding" == classname:
+        print(f"Initializing Module {classname}.")
+        nn.init.trunc_normal_(m.weight.data, 0.0, 0.02)
+    # elif "Parameter" in classname:
+    #     return nn.init.trunc_normal_(m, 0.0, 0.02)
+
+
 
 
 def restore(x):
@@ -24,6 +46,46 @@ def restore(x):
 
 def exists(val):
 	return val is not None
+
+
+class BiDirectionalTransformer(nn.Module):
+	def __init__(
+		self,
+		dim,
+		vocab_size,
+		num_patches,
+		n_heads=8,
+		d_head=64,
+		dec_depth=6,
+		dropout=0.1
+	):
+		super().__init__()
+
+
+		self.input_proj = nn.Embedding(vocab_size+1, dim)
+		# self.pos_enc =  nn.Parameter(torch.randn(1, num_patches, dim))
+		self.pos_enc = nn.init.trunc_normal_(nn.Parameter(torch.zeros(1, num_patches, dim)), 0., 0.02)
+		self.mask_token_id = vocab_size
+
+		self.init_norm = LayerNorm(dim)
+		self.decoder = Decoder(
+			dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth, dropout=dropout
+		)
+		self.final_norm = LayerNorm(dim)
+		self.linear = nn.Linear(dim, vocab_size)
+		self.apply(weights_init)
+	
+	def forward(self, x):
+		x = self.input_proj(x)
+		x += self.pos_enc
+
+		# transformer decoder
+		x = self.init_norm(x)
+		dec_out = self.decoder(x, context=None)
+		dec_out = self.final_norm(dec_out)
+		output = self.linear(dec_out)
+		return output
+		
 
 class MaskGitTransformer(nn.Module):
 	def __init__(
@@ -40,41 +102,28 @@ class MaskGitTransformer(nn.Module):
   
 		self.vq = vq
 
-		self.input_proj = nn.Embedding(vocab_size+1, dim)
-		num_patches = vq.num_patches
-		self.pos_enc =  nn.Parameter(torch.randn(1, num_patches, dim))
+
+		self.bidirectional_transformer = BiDirectionalTransformer(
+			dim=dim, vocab_size=vocab_size, num_patches=vq.num_patches,
+			n_heads=n_heads, d_head=d_head, dec_depth=dec_depth, dropout=dropout
+		)
+		# self.input_proj = nn.Embedding(vocab_size+1, dim)
+		# num_patches = vq.num_patches
+		# self.pos_enc =  nn.Parameter(torch.randn(1, num_patches, dim))
 		self.mask_token_id = vocab_size
 
-		self.init_norm = nn.LayerNorm(dim)
-		self.decoder = BidirectionalDecorder(
-			dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth, dropout=dropout
-		)
-		self.final_norm = nn.LayerNorm(dim)
-		self.linear = nn.Linear(dim, vocab_size)
+		# self.init_norm = LayerNorm(dim)
+		# self.decoder = BidirectionalDecorder(
+		# 	dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth, dropout=dropout
+		# )
+		# self.final_norm = LayerNorm(dim)
+		# self.linear = nn.Linear(dim, vocab_size)
 
 		# self.apply(self._init_weights)
 
 		# freeze vq
 		self.vq.eval()
 		self.vq.requires_grad_(False)
-
-	def _init_weights(self, module):
-		"""
-		Initialize the weights according to the original implementation.
-		https://github.com/google-research/maskgit/blob/main/maskgit/nets/maskgit_transformer.py#L37
-		"""
-		# TODO: make this configurable
-		if isinstance(module, nn.Linear):
-			nn.init.trunc_normal_(module.weight, std=self.config.initializer_range)
-			if module.bias is not None:
-				module.bias.data.zero_()
-		elif isinstance(module, nn.Embedding):
-			nn.init.trunc_normal_(module.weight, std=self.config.initializer_range)
-		# elif isinstance(module, (nn.LayerNorm, RMSNorm)):
-		# 	if hasattr(module, "weight") and module.weight is not None:
-		# 		module.weight.data.fill_(1.0)
-		# 	if hasattr(module, "bias") and module.bias is not None:
-		# 		module.bias.data.zero_()
 		
 	def fill_mask(self, x):
 		T = 8  # max number of timesteps during inference
@@ -124,14 +173,13 @@ class MaskGitTransformer(nn.Module):
 		x = self.vq.encode_imgs(imgs)
 		
 		x, tgt, _ = self.fill_mask(x)
-		x = self.input_proj(x)
-		x += self.pos_enc
 
 		# transformer decoder
-		x = self.init_norm(x)
-		dec_out = self.decoder(x, context=None)
-		dec_out = self.final_norm(dec_out)
-		output = self.linear(dec_out)
+		output = self.bidirectional_transformer(x)
+		# x = self.init_norm(x)
+		# dec_out = self.decoder(x, context=None)
+		# dec_out = self.final_norm(dec_out)
+		# output = self.linear(dec_out)
 
 		if not self.training:
 			pred_ids = torch.softmax(output, dim=-1).argmax(dim=-1)
