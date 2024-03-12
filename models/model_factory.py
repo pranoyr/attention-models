@@ -113,7 +113,9 @@ def build_model(cfg):
 			vocab_size=cfg.codebook.codebook_size,
 			n_heads=cfg.model.n_heads,
 			d_head=cfg.model.d_head,
-			dec_depth=cfg.model.depth)
+			dec_depth=cfg.model.depth,
+			mult=cfg.model.mult,
+			dropout=cfg.model.dropout)
 		return model
 	
 	if cfg.model.name == "vit":

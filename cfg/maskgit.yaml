@@ -33,6 +33,8 @@ model:
     n_heads : 12
     d_head : 64
     depth : 12
+    mult : 4 
+    dropout : 0.1
 
 dataset:
     name: coco

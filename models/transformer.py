@@ -47,10 +47,10 @@ class FeedForward(nn.Module):
 
 
 class Encoder(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth, dropout):
+	def __init__(self, dim, n_heads=8, d_head=64, depth=6, mult=4, dropout=0.0):
 		super().__init__()
 	
-		self.layers = nn.ModuleList([EncoderLayer(dim, n_heads, d_head, dropout) for _ in range(depth)])
+		self.layers = nn.ModuleList([EncoderLayer(dim, n_heads, d_head, mult, dropout) for _ in range(depth)])
  
 	def forward(self, x, context_mask=None):
 		for layer in self.layers:
@@ -59,11 +59,11 @@ class Encoder(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-	def __init__(self, dim, n_heads, d_head, dropout):
+	def __init__(self, dim, n_heads, d_head, mult, dropout):
 		super().__init__()
 
 		self.self_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
-		self.feed_forward = FeedForward(dim)
+		self.feed_forward = FeedForward(dim, mult=mult)
 		self.norm1 = LayerNorm(dim)
 		self.norm2 = LayerNorm(dim)
 		
@@ -85,10 +85,10 @@ class EncoderLayer(nn.Module):
 
 
 class Decoder(nn.Module):
-	def __init__(self, dim, n_heads, d_head, depth, dropout=0.):
+	def __init__(self, dim, n_heads=8, d_head=64, depth=6, mult=4, dropout=0.):
 		super().__init__()
 
-		self.layers = nn.ModuleList([DecoderLayer(dim, n_heads, d_head, dropout) for _ in range(depth)])
+		self.layers = nn.ModuleList([DecoderLayer(dim, n_heads, d_head, mult, dropout) for _ in range(depth)])
 
 	def forward(self, dec_in, context, context_mask=None, causal_mask=None):
 		# input to the decoder is the previous dec output
@@ -100,13 +100,13 @@ class Decoder(nn.Module):
 
 
 class DecoderLayer(nn.Module):
-	def __init__(self, dim, n_heads, d_head, dropout):
+	def __init__(self, dim, n_heads=8, d_head=64, mult=4, dropout=0.0):
 		super().__init__()
 
 		self.self_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
 		self.cross_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
 		
-		self.feed_forward = FeedForward(dim)
+		self.feed_forward = FeedForward(dim, mult)
 		self.norm1 = LayerNorm(dim)
 		self.norm2 = LayerNorm(dim)
 		self.norm3 = LayerNorm(dim)

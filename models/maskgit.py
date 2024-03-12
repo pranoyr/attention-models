@@ -52,11 +52,12 @@ class BiDirectionalTransformer(nn.Module):
 	def __init__(
 		self,
 		dim,
-		vocab_size,
-		num_patches,
+		vocab_size=8192,
+		num_patches=256,
 		n_heads=8,
 		d_head=64,
 		dec_depth=6,
+		mult=4,
 		dropout=0.1
 	):
 		super().__init__()
@@ -69,7 +70,7 @@ class BiDirectionalTransformer(nn.Module):
 
 		self.init_norm = LayerNorm(dim)
 		self.decoder = Decoder(
-			dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth, dropout=dropout
+			dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth, mult=mult, dropout=dropout
 		)
 		self.final_norm = LayerNorm(dim)
 		self.linear = nn.Linear(dim, vocab_size)
@@ -92,10 +93,11 @@ class MaskGitTransformer(nn.Module):
 		self,
 		dim,
 		vq,
-		vocab_size,
+		vocab_size=8192,
 		n_heads=8,
 		d_head=64,
 		dec_depth=6,
+		mult=4,
 		dropout=0.1
 	):
 		super().__init__()
@@ -105,7 +107,7 @@ class MaskGitTransformer(nn.Module):
 
 		self.bidirectional_transformer = BiDirectionalTransformer(
 			dim=dim, vocab_size=vocab_size, num_patches=vq.num_patches,
-			n_heads=n_heads, d_head=d_head, dec_depth=dec_depth, dropout=dropout
+			n_heads=n_heads, d_head=d_head, dec_depth=dec_depth, mult=mult, dropout=dropout
 		)
 		# self.input_proj = nn.Embedding(vocab_size+1, dim)
 		# num_patches = vq.num_patches
