@@ -27,21 +27,21 @@ class LayerNorm(nn.Module):
 
 
 def weights_init(m):
-    classname = m.__class__.__name__
-    if "Linear" in classname or "Embedding" == classname:
-        print(f"Initializing Module {classname}.")
-        nn.init.trunc_normal_(m.weight.data, 0.0, 0.02)
-    # elif "Parameter" in classname:
-    #     return nn.init.trunc_normal_(m, 0.0, 0.02)
+	classname = m.__class__.__name__
+	if "Linear" in classname or "Embedding" == classname:
+		print(f"Initializing Module {classname}.")
+		nn.init.trunc_normal_(m.weight.data, 0.0, 0.02)
+	# elif "Parameter" in classname:
+	#     return nn.init.trunc_normal_(m, 0.0, 0.02)
 
 
 
 
 def restore(x):
-    x = (x + 1) * 0.5
-    x = x.permute(1,2,0).detach().cpu().numpy()
-    x = (255*x).astype(np.uint8)
-    return x
+	x = (x + 1) * 0.5
+	x = x.permute(1,2,0).detach().cpu().numpy()
+	x = (255*x).astype(np.uint8)
+	return x
 
 
 def exists(val):
@@ -158,9 +158,11 @@ class MaskGitTransformer(nn.Module):
 		mask = randm_perm < num_tokens_masked
 		mask = torch.zeros(x.shape).bool()
 		# put first 200 as True
-		mask[:, :num_masked] = True
+		# mask[:, :num_masked] = True
 		# put last 200 as True
-		# mask[:, -200:] = True
+		# mask[:, -num_masked:] = True
+		mask[:, :num_masked] = True
+
 
 		mask = mask.cuda()
   
@@ -194,7 +196,7 @@ class MaskGitTransformer(nn.Module):
 		return loss    
 
 	def generate(self, imgs : Optional[torch.Tensor] = None, num_masked=200,  timesteps = 18):
-		     
+			 
 		num_patches = self.vq.num_patches
 
 		device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -228,15 +230,35 @@ class MaskGitTransformer(nn.Module):
 		outputs = []
 		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
 			
+			rand_mask_prob = cosine_schedule(timestep)
+			num_tokens_masked = max(int((rand_mask_prob * num_masked).item()), 1)
+			print(num_tokens_masked)
+   
+   
+			low_probs_indices = torch.argsort(scores, dim = -1)	
+			# indices of tokens to mask
+			masked_indices = low_probs_indices[:, :num_tokens_masked]
+   			# True where the tokens are masked, False otherwise
+			mask.scatter_(1, masked_indices, True)
 			
+   
+			ids2 = ids.masked_fill(mask, 100)
+			decoded_imgs_1 = self.vq.decode_indices(ids2)
+			# display
+			img_1 = restore(decoded_imgs_1[0])
+			img_1 = img_1[:, :, ::-1]
+   
+   
+   
 			x = ids.masked_fill(mask, self.mask_token_id)    
 			# decoder forward
-			x = self.input_proj(x)
-			x += self.pos_enc
-			x = self.init_norm(x)
-			logits = self.decoder(x, context=None)
-			logits = self.final_norm(logits)
-			logits = self.linear(logits)
+			logits = self.bidirectional_transformer(x)
+			# x = self.input_proj(x)
+			# x += self.pos_enc
+			# x = self.init_norm(x)
+			# logits = self.decoder(x, context=None)
+			# logits = self.final_norm(logits)
+			# logits = self.linear(logits)
 
 			probs = F.softmax(logits, dim = -1)
    
@@ -258,33 +280,26 @@ class MaskGitTransformer(nn.Module):
 			# scores = scores.masked_fill(~mask, 1.0)
 			scores = scores.masked_fill(~mask, 1.0)
    
-			num_tokens_masked = mask.sum()//2
-			print(num_tokens_masked)
-			# rand_mask_prob = cosine_schedule(timestep)
-			# num_tokens_masked = max(int((rand_mask_prob * num_masked).item()), 1)
+			# num_tokens_masked = mask.sum()//2
 			# print(num_tokens_masked)
 			
-
-			low_probs_indices = torch.argsort(scores, dim = -1)	
-			# print(low_probs_indices.shape)
-			# print(num_tokens_masked)
-			# print()
-			
-			# indices of tokens to mask
-			masked_indices = low_probs_indices[:, :num_tokens_masked]
+		
+   
+   
 
 			mask = torch.zeros_like(ids).bool().to(device)
-			
-			# True where the tokens are masked, False otherwise
-			mask.scatter_(1, masked_indices, True)
-
+		
+   
+	
 
 			decoded_imgs = self.vq.decode_indices(ids)
 			# display
 			img = restore(decoded_imgs[0])
 			img = img[:, :, ::-1]
-			outputs.append(img)
-
+			img_combined = np.vstack([img, img_1])
+			outputs.append(img_combined)
+			
+			
 
 		outputs  = np.hstack(outputs)
 		cv2.imwrite('outputs/maskgit/test_outputs/iterations.jpg', outputs)

@@ -78,4 +78,4 @@ training:
     mixed_precision: "no"
     seed: 42
     num_epochs: 200
-    max_grad_norm: 1.0
+    max_grad_norm: null

@@ -8,7 +8,7 @@ experiment:
     sample_every: 1000
     log_every: 100
     log_level: info
-    resume_path_from_checkpoint: null
+    resume_path_from_checkpoint: outputs/maskgit/checkpoints/MaskGit.pt
 
 
 codebook:
@@ -75,4 +75,4 @@ training:
     mixed_precision: "no"
     seed: 42
     num_epochs: 200
-    max_grad_norm: 1.0
+    max_grad_norm: null
