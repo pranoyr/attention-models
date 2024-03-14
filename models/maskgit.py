@@ -253,12 +253,7 @@ class MaskGitTransformer(nn.Module):
 			x = ids.masked_fill(mask, self.mask_token_id)    
 			# decoder forward
 			logits = self.bidirectional_transformer(x)
-			# x = self.input_proj(x)
-			# x += self.pos_enc
-			# x = self.init_norm(x)
-			# logits = self.decoder(x, context=None)
-			# logits = self.final_norm(logits)
-			# logits = self.linear(logits)
+		
 
 			probs = F.softmax(logits, dim = -1)
    
@@ -280,16 +275,9 @@ class MaskGitTransformer(nn.Module):
 			# scores = scores.masked_fill(~mask, 1.0)
 			scores = scores.masked_fill(~mask, 1.0)
    
-			# num_tokens_masked = mask.sum()//2
-			# print(num_tokens_masked)
-			
-		
-   
-   
 
 			mask = torch.zeros_like(ids).bool().to(device)
 		
-   
 	
 
 			decoded_imgs = self.vq.decode_indices(ids)
