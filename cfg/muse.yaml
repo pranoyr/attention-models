@@ -57,6 +57,7 @@ dataset:
         random_crop: False
         mean : [0.5, 0.5, 0.5]
         std : [0.5, 0.5, 0.5]
+        scale : 0.9
 
 optimizer:
     name: adamw

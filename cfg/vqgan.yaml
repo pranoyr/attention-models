@@ -34,10 +34,11 @@ dataset:
     preprocessing:
         resolution: 256
         center_crop: False
-        random_flip: False
-        random_crop: False
+        random_flip: True
+        random_crop: True
         mean : [0.5, 0.5, 0.5]
         std : [0.5, 0.5, 0.5]
+        scale : 0.66
 
 optimizer:
     name: adamw
@@ -59,4 +60,4 @@ training:
     mixed_precision: "no"
     seed: 42
     num_epochs: 200
-    max_grad_norm: 1.0
+    max_grad_norm: null

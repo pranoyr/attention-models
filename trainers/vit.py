@@ -70,7 +70,7 @@ class VitTrainer(BaseTrainer):
 						# cross entropy loss
 						loss = self.criterion(outputs, target)
 						self.accelerator.backward(loss)
-						if self.accelerator.sync_gradients:
+						if self.accelerator.sync_gradients and self.max_grad_norm:
 							self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
 						self.optim.step()
 						self.scheduler.step(self.global_step)

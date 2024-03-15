@@ -156,7 +156,7 @@ class VQGANTrainer(BaseTrainer):
 							d_loss = self.d_loss(fake_pred, real_pred) + gp
 							
 						self.accelerator.backward(d_loss)
-						if self.accelerator.sync_gradients:
+						if self.accelerator.sync_gradients and self.max_grad_norm:
 							self.accelerator.clip_grad_norm_(self.discr.parameters(), self.max_grad_norm)
 						self.d_optim.step()
 						self.d_sched.step(self.global_step)
@@ -179,7 +179,7 @@ class VQGANTrainer(BaseTrainer):
 							loss = codebook_loss + rec_loss + per_loss + self.d_weight * g_loss
 						
 						self.accelerator.backward(loss)
-						if self.accelerator.sync_gradients:
+						if self.accelerator.sync_gradients and self.max_grad_norm:
 							self.accelerator.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
 						self.g_optim.step()
 						self.g_sched.step(self.global_step)
