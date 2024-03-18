@@ -8,23 +8,60 @@ import torch.nn.functional as F
 from einops import rearrange, repeat, pack
 from einops.layers.torch import Rearrange
 from models.softmax_attention import SoftmaxAttention
+from typing import Optional
+from xformers.ops import SwiGLU
+
 
 
 def l2_norm(x):
 	return F.normalize(x, p=2, dim=1)
 
 
-class FeedForward(nn.Module):
-	def __init__(self, dim: int, mlp_dim: int):
-		super().__init__()
-		self.net = nn.Sequential(
-			nn.Linear(dim, mlp_dim),
-			nn.Tanh(),
-			nn.Linear(mlp_dim, dim)
-		)
+class FeedForward(SwiGLU):
+    def __init__(
+        self,
+        in_features: int,
+        hidden_features: Optional[int] = None,
+        bias: bool = True,
+    ) -> None:
+        out_features = in_features
+        hidden_features = (int(hidden_features * 2 / 3) + 7) // 8 * 8
+        super().__init__(
+            in_features=in_features,
+            hidden_features=hidden_features,
+            out_features=out_features,
+            bias=bias,
+        )
 
-	def forward(self, x):
-		return self.net(x)
+
+# class FeedForward(nn.Module):
+# 	def __init__(self, dim: int, mlp_dim: int):
+# 		super().__init__()
+# 		self.net = nn.Sequential(
+# 			nn.Linear(dim, mlp_dim),
+# 			nn.Tanh(),
+# 			nn.Linear(mlp_dim, dim)
+# 		)
+
+# 	def forward(self, x):
+# 		return self.net(x)
+
+# class FeedForward(nn.Module):
+#     def __init__(self, dim, mlp_dim, dropout=0.):
+#         super().__init__()
+#         self.w_1 = nn.Linear(dim, mlp_dim)
+#         self.act = nn.GELU()
+#         self.dropout = nn.Dropout(p=dropout)
+#         self.w_2 = nn.Linear(mlp_dim, dim)
+    
+#     def forward(self, x):
+#         x = self.w_1(x)
+#         x = self.act(x)
+#         x = self.dropout(x)
+#         x = self.w_2(x)
+
+#         return x
+
 
 
 class EncoderLayer(nn.Module):
@@ -78,12 +115,17 @@ class ViTEncoder(nn.Module):
 		patch_dim = patch_size * patch_size * 3
 		num_patches = (img_size // patch_size) ** 2
 
+		# self.to_patch_embedding = nn.Sequential(
+		# 	Rearrange("b c (h p1) (w p2) -> b (h w) (p1 p2 c)", p1=self.patch_size, p2=self.patch_size),
+		# 	nn.LayerNorm(patch_dim),
+		# 	nn.Linear(patch_dim, dim),
+		# 	nn.LayerNorm(dim)
+		# )
+
 		self.to_patch_embedding = nn.Sequential(
-			Rearrange("b c (h p1) (w p2) -> b (h w) (p1 p2 c)", p1=self.patch_size, p2=self.patch_size),
-			nn.LayerNorm(patch_dim),
-			nn.Linear(patch_dim, dim),
-			nn.LayerNorm(dim)
-		)
+            nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size, bias=False),
+            Rearrange('b c h w -> b (h w) c'),
+        )
 
 		self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
 		self.pre_norm = nn.LayerNorm(dim)
@@ -98,7 +140,7 @@ class ViTEncoder(nn.Module):
 		# encoder
 		x = self.pre_norm(x)
 		x = self.encoder(x)
-		x = self.final_norm(x)
+		# x = self.final_norm(x)
 		return x
 
 
@@ -125,7 +167,7 @@ class ViTDecoder(nn.Module):
 
 		x = self.pre_norm(x)
 		x = self.decoder(x)
-		x = self.final_norm(x)
+		# x = self.final_norm(x)
 		x = self.fc(x)  # project to original patch dim
 
 		# inverse patches to image

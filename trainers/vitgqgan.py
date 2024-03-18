@@ -56,6 +56,7 @@ class VQGANTrainer(BaseTrainer):
 		warmup_steps = cfg.lr_scheduler.params.warmup_steps
 		beta1 = cfg.optimizer.params.beta1
 		beta2 = cfg.optimizer.params.beta2
+
 		self.gradient_accumulation_steps = cfg.training.gradient_accumulation_steps
 
 
@@ -79,7 +80,12 @@ class VQGANTrainer(BaseTrainer):
 			param.requires_grad = False
 		self.d_loss = hinge_d_loss
 		self.g_loss = g_nonsaturating_loss
-		self.d_weight = 0.1
+
+		self.per_loss_weight = cfg.losses.per_loss_weight
+		self.adv_loss_weight = cfg.losses.adv_loss_weight
+		self.logit_laplace_weight = cfg.losses.logit_laplace_weight
+
+		
 		
 		(
 			self.model,
@@ -169,14 +175,17 @@ class VQGANTrainer(BaseTrainer):
 					with self.accelerator.accumulate(self.model):
 						with self.accelerator.autocast():
 							rec, codebook_loss = self.model(img)
-							# reconstruction loss
-							rec_loss = F.l1_loss(rec, img) + F.mse_loss(rec, img)
+						
+							logit_laplacian = F.l1_loss(rec, img)
+							l2_loss = F.mse_loss(rec, img)
 							# perception loss
 							per_loss = self.per_loss(rec, img).mean()
 							# gan loss
 							g_loss = self.g_loss(self.discr(rec))
 							# combine
-							loss = codebook_loss + rec_loss + per_loss + self.d_weight * g_loss
+							loss = codebook_loss + self.adv_loss_weight * g_loss + self.per_loss_weight * per_loss  \
+							+ self.logit_laplace_weight * logit_laplacian + l2_loss
+							#  L = LVQ + 0.1 LAdv + 0.1 LPerceptual + 0.1 LLogit-laplace + 1.0L2.
 						
 						self.accelerator.backward(loss)
 						if self.accelerator.sync_gradients and self.max_grad_norm:
@@ -197,7 +206,7 @@ class VQGANTrainer(BaseTrainer):
 						d_lr = self.d_optim.param_groups[0]['lr']
 						self.accelerator.log({"step": self.global_step, "d_lr": d_lr, "g_lr": g_lr,
 											"d_loss": d_loss, "g_loss": g_loss, 
-											"rec_loss": rec_loss, "per_loss": per_loss,
+											"l2_loss": l2_loss, "per_loss": per_loss, "logit_laplace": logit_laplacian,
 											"codebook_loss": codebook_loss}, step=self.global_step)
 			
 					self.global_step += 1
