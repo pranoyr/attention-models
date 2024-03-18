@@ -56,7 +56,7 @@ class VQGANTrainer(BaseTrainer):
 		warmup_steps = cfg.lr_scheduler.params.warmup_steps
 		beta1 = cfg.optimizer.params.beta1
 		beta2 = cfg.optimizer.params.beta2
-		decay_steps = cfg.scheduler.params.decay_steps
+		decay_steps = cfg.lr_scheduler.params.decay_steps
 
 		self.gradient_accumulation_steps = cfg.training.gradient_accumulation_steps
 
