@@ -62,6 +62,7 @@ lr_scheduler:
     params:
         learning_rate: ${optimizer.params.learning_rate}
         warmup_steps: 30000
+        decay_steps: null
 
 losses : 
     per_loss_weight : 1
