@@ -19,13 +19,13 @@ codebook:
 model:
     name: vitvqgan
     transformer:
-        dim : 768
+        dim : 512
         patch_size : 8
-        n_heads : 12
+        n_heads : 8
         d_head : 64
-        depth : 12
+        depth : 6
         dropout : 0.
-        mlp_dim: 3072
+        mlp_dim: 2048
 
 
 dataset:
@@ -61,8 +61,8 @@ lr_scheduler:
     scheduler: cosine_with_warmup
     params:
         learning_rate: ${optimizer.params.learning_rate}
-        warmup_steps: 30000
-        decay_steps: null
+        warmup_steps: 50000
+        decay_steps: 100000
 
 losses : 
     per_loss_weight : 1

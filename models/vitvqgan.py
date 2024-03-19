@@ -14,7 +14,7 @@ from xformers.ops import SwiGLU
 
 
 def l2_norm(x):
-	return F.normalize(x, p=2, dim=1)
+	return F.normalize(x, p=2, dim=-1)
 
 
 class FeedForward(SwiGLU):
@@ -184,36 +184,30 @@ class Codebook(nn.Module):
 		self.beta = beta
 
 		self.embedding = nn.Embedding(self.codebook_size, self.codebook_dim)
-		self.embedding.weight.data.uniform_(-1.0 / self.codebook_size, 1.0 / self.codebook_size)
-
+		# self.embedding.weight.data.uniform_(-1.0 / self.codebook_size, 1.0 / self.codebook_size)
+		self.embedding.weight.data.normal_()
+	
 	def forward(self, z):
 		z = l2_norm(z)
-		# for computing the difference between z and embeddings
-		z_flattened = rearrange(z, "b t d -> (b t) d")
+		z_flattened = z.view(-1, self.codebook_dim)
+		embedd_norm = l2_norm(self.embedding.weight)
+		# distances from z to embeddings e_j (z - e)^2 = z^2 + e^2 - 2 e * z
 
-		embed_norm = l2_norm(self.embedding.weight)
+		d = torch.sum(z_flattened**2, dim=1, keepdim=True) + \
+			torch.sum(embedd_norm**2, dim=1) - 2 * \
+			torch.einsum('bd,nd->bn', z_flattened, embedd_norm)
 
-		# D - distance between z and embeddings
-		d = (
-			torch.sum(z_flattened**2, dim=1, keepdim=True) + 
-			torch.sum(self.embedding.weight**2, dim=1) - 
-			2 * (torch.matmul(z_flattened, embed_norm.t()))
-		)
-
-		min_encoding_indices = torch.argmin(d, dim=1)
-
-		z_q = self.embedding(min_encoding_indices)
-
-		b, t, d = z.shape
-		z_q = rearrange(z_q, "(b t) d -> b t d", t=t, d=d)
-
+		encoding_indices = torch.argmin(d, dim=1).view(*z.shape[:-1])
+		z_q = self.embedding(encoding_indices)
 		z_q = l2_norm(z_q)
 
-		loss = torch.mean((z_q.detach() - z) ** 2) + self.beta * torch.mean((z_q - z.detach()) ** 2)
+		# compute loss for embedding
+		loss = self.beta * torch.mean((z_q.detach()-z)**2) + torch.mean((z_q-z.detach())**2)
 
+		# preserve gradients
 		z_q = z + (z_q - z).detach()
 
-		return z_q, min_encoding_indices, loss
+		return z_q, encoding_indices, loss
 
 	def indices_to_embeddings(self, indices):
 		embeds = self.embedding(indices)
