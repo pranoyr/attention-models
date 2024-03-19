@@ -4,6 +4,10 @@ import torch.nn.functional as F
 from einops import rearrange, repeat, pack
 
 
+def l2_norm(x):
+	return F.normalize(x, p=2, dim=-1)
+
+
 class GroupNorm(nn.Module):
     def __init__(self, channels):
         super(GroupNorm, self).__init__()
@@ -145,12 +149,14 @@ class Codebook(nn.Module):
 
         # for computing the difference between z and embeddings
         z = rearrange(z, 'b d h w -> b h w d')
+        z = l2_norm(z)
         z_flattened = rearrange(z, 'b h w d -> (b h w) d') 
 
-        # D - distance between z and embeddings :  z(b*h*w,d) - embeddings(n,D) 
+        embedd_norm = l2_norm(self.embedding.weight)
+
         d = torch.sum(z_flattened**2, dim=1, keepdim=True) + \
-            torch.sum(self.embedding.weight**2, dim=1) - \
-            2*(torch.matmul(z_flattened, self.embedding.weight.t()))
+			torch.sum(embedd_norm**2, dim=1) - 2 * \
+			torch.einsum('bd,nd->bn', z_flattened, embedd_norm)
 
         min_encoding_indices = torch.argmin(d, dim=1)
         
@@ -158,6 +164,7 @@ class Codebook(nn.Module):
 
         b , h, w, d = z.shape
         z_q = rearrange(z_q, '(b h w) d -> b h w d', h=h, w=w)
+        z_q = l2_norm(z_q)
 
         loss = torch.mean((z_q.detach() - z)**2) + self.beta * torch.mean((z_q - z.detach())**2)
 
