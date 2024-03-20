@@ -18,20 +18,20 @@ def l2_norm(x):
 
 
 class FeedForward(SwiGLU):
-    def __init__(
-        self,
-        in_features: int,
-        hidden_features: Optional[int] = None,
-        bias: bool = True,
-    ) -> None:
-        out_features = in_features
-        hidden_features = (int(hidden_features * 2 / 3) + 7) // 8 * 8
-        super().__init__(
-            in_features=in_features,
-            hidden_features=hidden_features,
-            out_features=out_features,
-            bias=bias,
-        )
+	def __init__(
+		self,
+		in_features: int,
+		hidden_features: Optional[int] = None,
+		bias: bool = True,
+	) -> None:
+		out_features = in_features
+		hidden_features = (int(hidden_features * 2 / 3) + 7) // 8 * 8
+		super().__init__(
+			in_features=in_features,
+			hidden_features=hidden_features,
+			out_features=out_features,
+			bias=bias,
+		)
 
 
 # class FeedForward(nn.Module):
@@ -53,7 +53,7 @@ class FeedForward(SwiGLU):
 #         self.act = nn.GELU()
 #         self.dropout = nn.Dropout(p=dropout)
 #         self.w_2 = nn.Linear(mlp_dim, dim)
-    
+	
 #     def forward(self, x):
 #         x = self.w_1(x)
 #         x = self.act(x)
@@ -123,14 +123,27 @@ class ViTEncoder(nn.Module):
 		# )
 
 		self.to_patch_embedding = nn.Sequential(
-            nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size, bias=False),
-            Rearrange('b c h w -> b (h w) c'),
-        )
+			nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size, bias=False),
+			Rearrange('b c h w -> b (h w) c'),
+		)
 
 		self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
 		self.pre_norm = nn.LayerNorm(dim)
 		self.encoder = TransformerBlock(dim, n_heads, d_head, depth, mlp_dim, dropout)
 		self.final_norm = nn.LayerNorm(dim)
+		self.apply(self._init_weights)
+
+	def initialize_weights(self):
+		self.apply(self._init_weights)
+
+	def _init_weights(self, m):
+		if isinstance(m, nn.Linear):
+			torch.nn.init.xavier_uniform_(m.weight)
+			if isinstance(m, nn.Linear) and m.bias is not None:
+				nn.init.constant_(m.bias, 0)
+		elif isinstance(m, nn.LayerNorm):
+			nn.init.constant_(m.bias, 0)
+			nn.init.constant_(m.weight, 1.0)
 
 	def forward(self, x):
 		# to patches
@@ -161,6 +174,19 @@ class ViTDecoder(nn.Module):
 
 		self.final_norm = nn.LayerNorm(dim)
 		self.fc = nn.Linear(dim, patch_dim)
+		self.apply(self._init_weights)
+
+	def initialize_weights(self):
+        self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            torch.nn.init.xavier_uniform_(m.weight)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
 
 	def forward(self, x):
 		x = x + self.pos_enc
@@ -232,13 +258,14 @@ class ViTVQGAN(nn.Module):
 		embeds, indices, loss = self.codebook(enc_imgs)
 		embeds = self.post_quant(embeds)
 		out = self.decoder(embeds)
+		out = out.clamp(-1.0, 1.0)
 		return out, loss
 	
 	def decode_indices(self, indices):
 		embeds = self.codebook.indices_to_embeddings(indices)
 		embeds = self.post_quant(embeds)
 		imgs = self.decoder(embeds)
-		return imgs
+		return imgs.clamp(-1.0, 1.0)
 	
 	def encode_imgs(self, imgs):
 		b = imgs.shape[0]
