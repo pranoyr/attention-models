@@ -32,13 +32,13 @@ transforms = T.Compose([
 
 # params
 vit_params = dict(
-        dim=768,
+        dim=512,
         img_size=256,
         patch_size=8,
-        n_heads=12,
+        n_heads=8,
         d_head=64,
-        depth=12,
-        mlp_dim=3072,
+        depth=6,
+        mlp_dim=2048,
         dropout=0)
 codebook_params = dict(codebook_size=8192, codebook_dim=32, beta=0.25)
 
@@ -47,7 +47,11 @@ codebook_params = dict(codebook_size=8192, codebook_dim=32, beta=0.25)
 vitvqgan = ViTVQGAN(vit_params, codebook_params)
 # load checkpoint
 ckpt = torch.load(args.ckpt, map_location='cpu')
+
 vitvqgan.load_state_dict(ckpt['state_dict'])
+
+
+print("***")
 vitvqgan.eval()
 
 # load image
