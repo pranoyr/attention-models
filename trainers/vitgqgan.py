@@ -234,7 +234,8 @@ class VQGANTrainer(BaseTrainer):
 				imgs_and_recs = rearrange(imgs_and_recs, 'r b ... -> (b r) ...')
 				imgs_and_recs = imgs_and_recs.detach().cpu().float()
 
-				grid = make_grid(imgs_and_recs, nrow=6, normalize=True, value_range=(-1, 1))
+				# grid = make_grid(imgs_and_recs, nrow=6, normalize=False, value_range=(-1, 1))
+				grid = make_grid(imgs_and_recs, nrow=6, normalize=False)
 				save_image(grid, os.path.join(self.image_saved_dir, f'step_{i}.png'))
 		self.model.train()
 

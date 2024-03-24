@@ -1,6 +1,9 @@
 from torchvision import transforms as T
 from PIL import Image
 from torchvision import transforms
+from torchvision.utils import make_grid, save_image
+from matplotlib import pyplot as plt
+
 
 
 def pair(x):
@@ -8,7 +11,6 @@ def pair(x):
 
 def get_transform(cfg, is_train=True):
     size = cfg.dataset.preprocessing.resolution
-    # resize = pair(resize)
     scale = cfg.dataset.preprocessing.scale
     if not is_train:
         scale = 1.0
@@ -27,7 +29,8 @@ def get_transform(cfg, is_train=True):
         t.append(T.CenterCrop(size))
         
     t.append(T.ToTensor())
-    t.append(T.Normalize(mean=(cfg.dataset.preprocessing.mean), std=(cfg.dataset.preprocessing.std)))
+    if cfg.dataset.preprocessing.mean:
+        t.append(T.Normalize(mean=(cfg.dataset.preprocessing.mean), std=(cfg.dataset.preprocessing.std)))
     
     return T.Compose(t)
 
@@ -44,17 +47,27 @@ if __name__=="__main__":
                 "center_crop": False,
                 "mean": [0.5, 0.5, 0.5],
                 "std": [0.5, 0.5, 0.5],
-                "scale" : 0.66
+                "scale" : 0.8
             }
         }
     }
     cfg = OmegaConf.create(cfg)
-    img = Image.open("data/images/000000000191.jpg")
+    img = Image.open("data/images/1.jpg")
     transform = get_transform(cfg, is_train=True)
     while True:
         img_transformed = transform(img)
-        img_numpy = img_transformed.permute(1, 2, 0).numpy()
-        print(img_numpy.shape)
-        cv2.imshow("img", img_numpy)
-        if cv2.waitKey(0) & 0xFF == ord('q'):
-            break
+        img_numpy = img_transformed.view(-1).numpy()
+        # show the distribution of the image
+        # plt.hist(img_numpy, bins=100)
+        # # save the image
+        # plt.savefig("hist.jpg")
+        
+
+        grid = make_grid(img_transformed, nrow=6, normalize=False, value_range=(-1, 1))
+        save_image(grid, "t.jpg")
+        # cv2.imshow("img", img_numpy)
+        # cv2.imwrite("t.jpg", grid)
+        break
+        
+        # if cv2.waitKey(0) & 0xFF == ord('q'):
+        #     break

@@ -17,50 +17,21 @@ def l2_norm(x):
 	return F.normalize(x, p=2, dim=-1)
 
 
-# class FeedForward(SwiGLU):
-# 	def __init__(
-# 		self,
-# 		in_features: int,
-# 		hidden_features: Optional[int] = None,
-# 		bias: bool = True,
-# 	) -> None:
-# 		out_features = in_features
-# 		hidden_features = (int(hidden_features * 2 / 3) + 7) // 8 * 8
-# 		super().__init__(
-# 			in_features=in_features,
-# 			hidden_features=hidden_features,
-# 			out_features=out_features,
-# 			bias=bias,
-# 		)
-
-
-class FeedForward(nn.Module):
-	def __init__(self, dim: int, mlp_dim: int):
-		super().__init__()
-		self.net = nn.Sequential(
-			nn.Linear(dim, mlp_dim),
-			nn.Tanh(),
-			nn.Linear(mlp_dim, dim)
+class FeedForward(SwiGLU):
+	def __init__(
+		self,
+		in_features: int,
+		hidden_features: Optional[int] = None,
+		bias: bool = True,
+	) -> None:
+		out_features = in_features
+		hidden_features = (int(hidden_features * 2 / 3) + 7) // 8 * 8
+		super().__init__(
+			in_features=in_features,
+			hidden_features=hidden_features,
+			out_features=out_features,
+			bias=bias,
 		)
-
-	def forward(self, x):
-		return self.net(x)
-
-# class FeedForward(nn.Module):
-#     def __init__(self, dim, mlp_dim, dropout=0.):
-#         super().__init__()
-#         self.w_1 = nn.Linear(dim, mlp_dim)
-#         self.act = nn.GELU()
-#         self.dropout = nn.Dropout(p=dropout)
-#         self.w_2 = nn.Linear(mlp_dim, dim)
-	
-#     def forward(self, x):
-#         x = self.w_1(x)
-#         x = self.act(x)
-#         x = self.dropout(x)
-#         x = self.w_2(x)
-
-#         return x
 
 
 
@@ -130,18 +101,6 @@ class ViTEncoder(nn.Module):
 		self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
 		self.pre_norm = nn.LayerNorm(dim)
 		self.encoder = TransformerBlock(dim, n_heads, d_head, depth, mlp_dim, dropout)
-		self.final_norm = nn.LayerNorm(dim)
-		self.apply(self._init_weights)
-
-
-	def _init_weights(self, m):
-		if isinstance(m, nn.Linear):
-			torch.nn.init.xavier_uniform_(m.weight)
-			if isinstance(m, nn.Linear) and m.bias is not None:
-				nn.init.constant_(m.bias, 0)
-		elif isinstance(m, nn.LayerNorm):
-			nn.init.constant_(m.bias, 0)
-			nn.init.constant_(m.weight, 1.0)
 
 	def forward(self, x):
 		# to patches
@@ -151,7 +110,6 @@ class ViTEncoder(nn.Module):
 		# encoder
 		x = self.pre_norm(x)
 		x = self.encoder(x)
-		# x = self.final_norm(x)
 		return x
 
 
@@ -169,27 +127,13 @@ class ViTDecoder(nn.Module):
 		self.pre_norm = nn.LayerNorm(dim)
 		self.decoder = TransformerBlock(dim, n_heads, d_head, depth, mlp_dim, dropout)
 		
-
-		self.final_norm = nn.LayerNorm(dim)
 		self.fc = nn.Linear(dim, patch_dim)
-		self.apply(self._init_weights)
-
-
-	def _init_weights(self, m):
-		if isinstance(m, nn.Linear):
-			torch.nn.init.xavier_uniform_(m.weight)
-			if isinstance(m, nn.Linear) and m.bias is not None:
-				nn.init.constant_(m.bias, 0)
-		elif isinstance(m, nn.LayerNorm):
-			nn.init.constant_(m.bias, 0)
-			nn.init.constant_(m.weight, 1.0)
 
 	def forward(self, x):
 		x = x + self.pos_enc
 
 		x = self.pre_norm(x)
 		x = self.decoder(x)
-		# x = self.final_norm(x)
 		x = self.fc(x)  # project to original patch dim
 
 		# inverse patches to image
@@ -261,6 +205,7 @@ class ViTVQGAN(nn.Module):
 		embeds = self.codebook.indices_to_embeddings(indices)
 		embeds = self.post_quant(embeds)
 		imgs = self.decoder(embeds)
+		# imgs = imgs.clamp(-1.0, 1.0)
 		return  imgs
 	
 	def encode_imgs(self, imgs):

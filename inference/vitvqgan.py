@@ -11,14 +11,15 @@ from models import ViTVQGAN
 
 
 def restore(x):
-    x = (x + 1) * 0.5
+    # x = (x + 1) * 0.5
+    x = x.clamp(0, 1)
     x = x.permute(1,2,0).detach().cpu().numpy()
     x = (255*x).astype(np.uint8)
     return x
 
 
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--image', type=str, default='data/images/scene.jpg', help='path to the image')
+parser.add_argument('--image', type=str, default='data/images/9.jpg', help='path to the image')
 parser.add_argument('--ckpt', type=str, default='outputs/vitvqgan/checkpoints/VitVQGAN.pt', help='path to the checkpoint')
 args = parser.parse_args()
 
@@ -26,7 +27,7 @@ args = parser.parse_args()
 transforms = T.Compose([
     T.Resize((256, 256)),
 	T.ToTensor(),
-	T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+	# T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
 
@@ -48,14 +49,14 @@ vitvqgan = ViTVQGAN(vit_params, codebook_params)
 # load checkpoint
 ckpt = torch.load(args.ckpt, map_location='cpu')
 
-vitvqgan.load_state_dict(ckpt['state_dict'])
+vitvqgan.load_state_dict(ckpt['state_dict'], strict=False)
 
-
-print("***")
 vitvqgan.eval()
 
 # load image
 imgs = Image.open(args.image)
+org_img = np.array(imgs)
+org_img = cv2.resize(org_img, (256, 256))[..., ::-1]
 imgs = transforms(imgs)
 imgs = imgs.unsqueeze(0)
 
@@ -67,5 +68,8 @@ with torch.no_grad():
 # display
 img = restore(imgs[0])
 img = img[:, :, ::-1]
-cv2.imshow('test', img)
-cv2.waitKey(0)
+
+final_img = np.concatenate([org_img, img], axis=1)
+cv2.imwrite('outputs/vitvqgan/test_outputs/result.jpg', final_img)
+# cv2.imshow('test', img)
+# cv2.waitKey(0)
