@@ -21,6 +21,7 @@ class BaseTrainer(object):
 		dataloaders
 		):
 
+		self.cfg = cfg
 		self.project_name = cfg.experiment.project_name
 		
 		# init accelerator
@@ -87,7 +88,9 @@ class BaseTrainer(object):
 		
 		checkpoint={
 				'step': self.global_step,
-				'state_dict': self.accelerator.unwrap_model(self.model).state_dict()
+				'state_dict': self.accelerator.unwrap_model(self.model).state_dict(),
+				'config': self.cfg
+
 			}
 
 		self.accelerator.save(checkpoint, filename)
