@@ -42,7 +42,7 @@ Download the pretrained weights and try it on your custom images.
 
 | Model                                                                                | size<br><sup>(pixels) | 
 | ------------------------------------------------------------------------------------ | --------------------- | 
-| [VitVQGAN](https://github.com/pranoyr/attention-models/releases/download/0.0.2/VitVQGAN.pt) | 256                   | 
+| [VitVQGAN](https://github.com/pranoyr/attention-models/releases/download/0.0.3/VitVQGAN.pt) | 256                   | 
 
 
 
