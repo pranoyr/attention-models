@@ -93,11 +93,6 @@ class ViTEncoder(nn.Module):
 			nn.LayerNorm(dim)
 		)
 
-		# self.to_patch_embedding = nn.Sequential(
-		# 	nn.Conv2d(3, dim, kernel_size=patch_size, stride=patch_size, bias=False),
-		# 	Rearrange('b c h w -> b (h w) c'),
-		# )
-
 		self.pos_enc = nn.Parameter(torch.randn(1, num_patches, dim))
 		self.pre_norm = nn.LayerNorm(dim)
 		self.encoder = TransformerBlock(dim, n_heads, d_head, depth, mlp_dim, dropout)
