@@ -234,14 +234,12 @@ class VQGAN(nn.Module):
         embeds, indices, loss = self.codebook(enc_imgs)
         embeds = self.post_quant(embeds)
         out = self.decoder(embeds)
-        out = out.clamp(-1.0, 1.0)
         return out, loss
     
     def decode_indices(self, indices):
         embeds = self.codebook.indices_to_embeddings(indices)
         embeds = self.post_quant(embeds)
         imgs = self.decoder(embeds)
-        out = out.clamp(-1.0, 1.0)
         return imgs
     
     def encode_imgs(self, imgs):
