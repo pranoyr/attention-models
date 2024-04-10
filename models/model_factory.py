@@ -11,8 +11,6 @@ import logging
 from models import ViT, ViTMoE
 from  models.vae.inference import VQVAE
 
-from .muse1 import MUSE_1
-
 
 def load_model(model, checkpoint):
 	ckpt = torch.load(checkpoint)
