@@ -4,7 +4,7 @@ import copy
 import torch.nn.functional as F
 from einops import rearrange, repeat, pack
 import math
-from models.transformer import Decoder 
+from models.transformer import Encoder 
 from models.muse import filter_logits
 from tqdm import tqdm
 from typing import Optional
@@ -13,6 +13,7 @@ import cv2
 
 def cosine_schedule(t):
 	return torch.cos(t * math.pi / 2)
+
 
 
 class LayerNorm(nn.Module):
@@ -35,10 +36,9 @@ def weights_init(m):
 	#     return nn.init.trunc_normal_(m, 0.0, 0.02)
 
 
-
-
 def restore(x):
-	x = (x + 1) * 0.5
+	# x = (x + 1) * 0.5
+	x = x.clamp(0,1)
 	x = x.permute(1,2,0).detach().cpu().numpy()
 	x = (255*x).astype(np.uint8)
 	return x
@@ -69,11 +69,11 @@ class BiDirectionalTransformer(nn.Module):
 		self.mask_token_id = vocab_size
 
 		self.init_norm = LayerNorm(dim)
-		self.decoder = Decoder(
+		self.decoder = Encoder(
 			dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth, mult=mult, dropout=dropout
 		)
 		self.final_norm = LayerNorm(dim)
-		self.linear = nn.Linear(dim, vocab_size)
+		self.linear = nn.Linear(dim, vocab_size, bias=False)
 		self.apply(weights_init)
 	
 	def forward(self, x):
@@ -82,7 +82,7 @@ class BiDirectionalTransformer(nn.Module):
 
 		# transformer decoder
 		x = self.init_norm(x)
-		dec_out = self.decoder(x, context=None)
+		dec_out = self.decoder(x)
 		dec_out = self.final_norm(dec_out)
 		output = self.linear(dec_out)
 		return output
@@ -105,34 +105,22 @@ class MaskGitTransformer(nn.Module):
 		self.vq = vq
 
 
-		self.bidirectional_transformer = BiDirectionalTransformer(
+		self.bidirectional_transformer = BiDirectionalTransformer (
 			dim=dim, vocab_size=vocab_size, num_patches=vq.num_patches,
 			n_heads=n_heads, d_head=d_head, dec_depth=dec_depth, mult=mult, dropout=dropout
 		)
-		# self.input_proj = nn.Embedding(vocab_size+1, dim)
-		# num_patches = vq.num_patches
-		# self.pos_enc =  nn.Parameter(torch.randn(1, num_patches, dim))
+		
 		self.mask_token_id = vocab_size
-
-		# self.init_norm = LayerNorm(dim)
-		# self.decoder = BidirectionalDecorder(
-		# 	dim=dim, n_heads=n_heads, d_head=d_head, depth=dec_depth, dropout=dropout
-		# )
-		# self.final_norm = LayerNorm(dim)
-		# self.linear = nn.Linear(dim, vocab_size)
-
-		# self.apply(self._init_weights)
 
 		# freeze vq
 		self.vq.eval()
 		self.vq.requires_grad_(False)
 		
 	def fill_mask(self, x):
-		T = 8  # max number of timesteps during inference
-		# sample the timestep from uniform distribution
+
 		b , n = x.shape
-		t = torch.randint(1, T, (1,))
-		num_tokens_masked = cosine_schedule(t / T) * n
+		timesteps = torch.random(b)
+		num_tokens_masked = cosine_schedule(timesteps) * n
 		num_tokens_masked = num_tokens_masked.clamp(min = 1.).int()
    
 		# create mask 
@@ -176,7 +164,7 @@ class MaskGitTransformer(nn.Module):
 		# quantize images
 		x = self.vq.encode_imgs(imgs)
 		
-		x, tgt, _ = self.fill_mask(x)
+		x, tgt, mask = self.fill_mask(x)
 
 		# transformer decoder
 		output = self.bidirectional_transformer(x)
@@ -187,12 +175,17 @@ class MaskGitTransformer(nn.Module):
 
 		if not self.training:
 			pred_ids = torch.softmax(output, dim=-1).argmax(dim=-1)
-			decoded_imgs = self.vq.decode_indices(pred_ids)
+			# replace the mask with pred_ids
+			
+			x[mask] = pred_ids[mask]
+			
+			decoded_imgs = self.vq.decode_indices(x)
 			return decoded_imgs
 			
 		# compute loss
 		output = rearrange(output, 'b t c -> b c t')
 		loss = torch.nn.functional.cross_entropy(output, tgt, ignore_index=-1)
+  
 		return loss    
 
 	def generate(self, imgs : Optional[torch.Tensor] = None, num_masked=200,  timesteps = 18):

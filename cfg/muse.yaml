@@ -1,0 +1,83 @@
+experiment:
+    project_name: muse
+    exp_name: run1
+    max_train_examples: 10000000000
+    save_every: 1000
+    eval_every: 50000000000000
+    sample_every: 500
+    log_every: 100
+    log_level: info
+    resume_path_from_checkpoint: null
+
+
+codebook:
+        codebook_dim: 32
+        beta : 0.25
+        codebook_size: 8192
+
+vitvqgan:
+    checkpoint : outputs/vitvqgan/checkpoints/VitVQGAN.pt
+    transformer:
+        dim : 512
+        patch_size : 8
+        n_heads : 8
+        d_head : 64
+        depth : 6
+        dropout : 0.
+        mlp_dim: 2048
+
+model:
+    name: muse
+    dim : 1024
+    encoder:
+        type: clip
+        name : openai/clip-vit-large-patch14
+        max_length : 77
+    decoder:
+        n_heads : 16
+        d_head : 64
+        depth : 22
+        mult : 6
+        dropout : 0.0
+
+dataset:
+    name: coco
+    params:
+        train_path:  /media/pranoy/UBUNTU_ROOT/home/pranoy/datasets/coco2017
+        val_path: null
+        num_workers: 4
+        pin_memory: True
+        batch_size: 1
+        persistent_workers: True
+        shuffle : True
+        train_test_split : 0.9
+    preprocessing:
+        resolution: 256
+        center_crop: False
+        random_flip: False
+        random_crop: True
+        mean : null
+        std : null
+        scale : 1.0
+
+optimizer:
+    name: adamw
+    params: 
+        learning_rate: 1e-4
+        beta1: 0.9
+        beta2: 0.999
+        weight_decay: 0.01
+
+lr_scheduler:
+    name: constant_with_warmup
+    params:
+        learning_rate: ${optimizer.params.learning_rate}
+        warmup_steps: 1000
+        decay_steps: null
+
+training:
+    gradient_accumulation_steps: 16
+    mixed_precision: "no"
+    seed: 42
+    num_epochs: 200
+    max_grad_norm: null

@@ -59,7 +59,7 @@ class Encoder(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-	def __init__(self, dim, n_heads, d_head, mult, dropout):
+	def __init__(self, dim, n_heads=8, d_head=64, mult=4, dropout=0.0):
 		super().__init__()
 
 		self.self_attn = SoftmaxAttention(dim, n_heads, d_head, dropout)
@@ -139,7 +139,7 @@ class Transformer(nn.Module):
 	def __init__(
 		self,
 		dim,
-		vocab_size,
+		vocab_size=1000,
 		n_heads=8,
 		d_head=64,
 		enc_depth=6,

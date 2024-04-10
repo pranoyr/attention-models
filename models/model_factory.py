@@ -9,11 +9,14 @@ from .maskgit import MaskGitTransformer
 import torch
 import logging
 from models import ViT, ViTMoE
+from  models.vae.inference import VQVAE
+
+from .muse1 import MUSE_1
 
 
 def load_model(model, checkpoint):
 	ckpt = torch.load(checkpoint)
-	model.load_state_dict(ckpt['state_dict'])
+	model.load_state_dict(ckpt['state_dict'], strict=False)
 	logging.info(f"Loaded pretrained ViTVQGAN from {checkpoint}")
 
 def freeze_model(model):
@@ -79,7 +82,9 @@ def build_model(cfg):
 		decoder_params = dict(
 			n_heads=cfg.model.decoder.n_heads,
 			d_head=cfg.model.decoder.d_head,
-			depth=cfg.model.decoder.depth)
+			depth=cfg.model.decoder.depth,
+   			mult = cfg.model.decoder.mult,
+			dropout = cfg.model.decoder.dropout)
 
 
 		model = MUSE(dim, vq, **encoder_params, **decoder_params)
@@ -146,6 +151,8 @@ def build_model(cfg):
 			num_classes = cfg.model.transformer.num_classes
 		)
 		return model
+
+	
 			
 			
 			
