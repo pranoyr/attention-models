@@ -314,7 +314,7 @@ vq = VQGAN(codebook_dim, codebook_size)
 dim = 512
 encoder_params = dict(
 	enc_type = 'clip',
-	enc_name = 'openai/clip-vit-base-patch32',
+	enc_name = 'openai/clip-vit-large-patch14',
 	max_length = 77
 )
  
