@@ -57,14 +57,6 @@ class TextEncoder(torch.nn.Module):
 			raise ValueError(f"Invalid encoder type {enc_type}")
 
 		self.project_embeds = torch.nn.Linear(768, dim)
-
-
-	# def forward(self, texts: List[str], device = None):
-	# 	inputs = self.tokenizer(texts, return_tensors="pt", max_length=self.max_length, padding="max_length")
-	# 	text_indices = inputs['input_ids'].to(device)
-	# 	attention_mask = inputs['attention_mask'].bool().to(device)
-	# 	text_embeds = self.encoder(text_indices).last_hidden_state
-	# 	return text_embeds, attention_mask
  
 	def forward(self, texts: List[str], device = None):
 		inputs = self.tokenizer(texts, return_tensors="pt", max_length=self.max_length, padding="max_length")
@@ -150,6 +142,7 @@ class MUSE(nn.Module):
 		self.decoder = BidirectionalDecoder(dim, codebook_size, n_heads, d_head, depth, mult, dropout, num_patches)
   
 		self.ignore_index = -1
+		self.embeds_drop_prob = embeds_drop_prob
 
 		# freeze the text encoder and vq
 		self.text_encoder.requires_grad_(False)
@@ -189,7 +182,7 @@ class MUSE(nn.Module):
 		img_token_indices, tgt = self.fill_mask(img_token_indices)
   
 		# self conditioning (for classifier free guidance)
-		context_mask = uniform((b,1,1), device=device) < 0.9
+		context_mask = uniform((b,1,1), device=device) < self.embeds_drop_prob
 		text_embeds = text_embeds * context_mask
 
 		# bidirectional decoder
@@ -203,7 +196,6 @@ class MUSE(nn.Module):
 	def generate(self, texts, timesteps = 18, device = None):
 		b = len(texts)
 		num_patches = self.vq.num_patches 
-		# num_patches = 256
 
 		if not device:
 			device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
