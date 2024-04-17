@@ -104,7 +104,7 @@ class MuseTrainer(BaseTrainer):
 						self.sample_prompts()
       
 					if not (self.global_step % self.eval_every):
-						self.generate_imgs()
+						self.evaluate()
 			
 					if not (self.global_step % self.gradient_accumulation_steps):
 						lr = self.optim.param_groups[0]['lr']
@@ -119,6 +119,7 @@ class MuseTrainer(BaseTrainer):
 	
 	@torch.no_grad()
 	def sample_prompts(self):
+		logging.info("Sampling prompts")
 		self.model.eval()
 		prompts = []
 		with open("data/prompts/dalle_prompts.txt", "r") as f:
@@ -134,11 +135,9 @@ class MuseTrainer(BaseTrainer):
   
   
 	@torch.no_grad()
-	def generate_imgs(self):
-     
-		logging.info("Generating samples")
+	def evaluate(self):
 		self.model.eval()
-		with tqdm(self.train_dl, dynamic_ncols=True, disable=not self.accelerator.is_main_process) as val_dl:
+		with tqdm(self.val_dl, dynamic_ncols=True, disable=not self.accelerator.is_main_process) as val_dl:
 			for i, batch in enumerate(val_dl):
 				img, text = batch
 				img = img.to(self.device)
