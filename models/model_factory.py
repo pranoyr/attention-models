@@ -81,6 +81,7 @@ def build_model(cfg):
 			d_head=cfg.model.decoder.d_head,
 			depth=cfg.model.decoder.depth,
    			mult = cfg.model.decoder.mult,
+			embeds_drop_prob = cfg.model.decoder.embeds_drop_prob,
 			dropout = cfg.model.decoder.dropout)
 
 

@@ -120,6 +120,3 @@ class BaseTrainer(object):
 		raise NotImplementedError("Evaluate method not implemented")
 
 
-	  
-
-

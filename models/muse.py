@@ -122,14 +122,15 @@ class MUSE(nn.Module):
 		self,
 		dim,
 		vq,
-		enc_type,
-		enc_name,
-		max_length,
-		n_heads,
-		d_head,
-		depth,
-		mult,
-		dropout
+		enc_type = "clip",
+		enc_name = "openai/clip-vit-large-patch14",
+		max_length = 77,
+		n_heads = 8,
+		d_head = 64,
+		depth = 6,
+		mult = 4,
+		embeds_drop_prob = 0.9,
+		dropout = 0.0
 	):
 		super().__init__()
 
@@ -190,73 +191,14 @@ class MUSE(nn.Module):
 		# self conditioning (for classifier free guidance)
 		context_mask = uniform((b,1,1), device=device) < 0.9
 		text_embeds = text_embeds * context_mask
-  
 
-
+		# bidirectional decoder
 		logits = self.decoder(img_token_indices, context=text_embeds)
-		
-	 	
+	
 		logits = rearrange(logits, "b t c -> b c t")
 		loss = torch.nn.functional.cross_entropy(logits, tgt, ignore_index=self.ignore_index)
 		return loss
 
-	def generate2(self, texts, timesteps = 18, device = None):
-	 
-		starting_temperature = 1
-  
-		b = len(texts)
-		seq_len = self.vq.num_patches
-		batch_size = b
-  
-		shape = (batch_size, seq_len)
-  		# text encoder
-		text_embeds, _ = self.text_encoder(texts, device=device)
-
-		ids = torch.full(shape, self.mask_token_id, dtype = torch.long, device = device)
-		scores = torch.zeros(shape, dtype = torch.float32, device = device) 
-	 
-		for timestep, steps_until_x0 in tqdm(zip(torch.linspace(0, 1, timesteps, device = device), reversed(range(timesteps))), total = timesteps):
-	
-			rand_mask_prob = cosine_schedule(timestep)
-			num_token_masked = max(int((rand_mask_prob * seq_len).item()), 1)
-
-			masked_indices = scores.topk(num_token_masked, dim = -1).indices
-
-			ids = ids.scatter(1, masked_indices, self.mask_token_id)
-
-			logits = self.decoder(ids, context=text_embeds)
-   
-   			# for classifier free guidance
-			null_context = torch.zeros_like(text_embeds).bool().to(device)
-			null_logits = self.decoder(ids, context=null_context)
-			# scaled_logits = (1  + 3) * logits - 3 * null_logits
-			scaled_logits = null_logits + 3 * (logits - null_logits)
-
-			filtered_logits = filter_logits(scaled_logits, p=0.9)
-   
-		
-
-			temperature = starting_temperature * (steps_until_x0 / timesteps) # temperature is annealed
-
-			pred_ids = gumbel_sample(filtered_logits, temperature = temperature, dim = -1)
-
-			is_mask = ids == self.mask_token_id
-
-			ids = torch.where(
-				is_mask,
-				pred_ids,
-				ids
-			)
-
-			
-			probs_without_temperature = scaled_logits.softmax(dim = -1)
-
-			scores = 1 - probs_without_temperature.gather(2, pred_ids[..., None])
-			scores = rearrange(scores, '... 1 -> ...')
-
-	
-		imgs = self.vq.decode_indices(ids)
-		return imgs
 
 	def generate(self, texts, timesteps = 18, device = None):
 		b = len(texts)
