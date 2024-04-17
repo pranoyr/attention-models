@@ -12,6 +12,8 @@ from accelerate import Accelerator
 from accelerate.utils import DistributedDataParallelKwargs
 from torch.utils.data import DataLoader, random_split
 from torchvision.utils import make_grid, save_image
+from .utils.scheduler import get_scheduler
+from .utils.optimizer import get_optimizer
 from tqdm.auto import tqdm
 from lpips import LPIPS
 from einops import rearrange
@@ -36,18 +38,30 @@ class MuseTrainer(BaseTrainer):
 		super().__init__(cfg, model, dataloaders)
   
 		# Training parameters
-		lr = cfg.optimizer.params.learning_rate
-		warmup_steps = cfg.lr_scheduler.params.warmup_steps
-		beta1 = cfg.optimizer.params.beta1
-		beta2 = cfg.optimizer.params.beta2
+		decay_steps = cfg.lr_scheduler.params.decay_steps
 
-		# Optimizer
-		self.optim = Adam(self.model.parameters(), lr=lr, betas=(beta1, beta2))
+  
+		if not decay_steps:
+			decay_steps = self.num_epoch * self.num_iters_per_epoch
+
+
+		# no decay on bias and layernorm and embedding
+		no_decay = ["bias", "layer_norm.weight", "embeddings.weight"]
+		params = [
+			{
+				"params": [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
+				"weight_decay": cfg.optimizer.params.weight_decay,
+			},
+			{
+				"params": [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
+				"weight_decay": 0.0,
+			}
+		]
+
+		self.optim = get_optimizer(cfg, params)
+		self.scheduler = get_scheduler(cfg, self.optim, decay_steps=decay_steps)
+
 	
-		self.scheduler = get_constant_schedule_with_warmup(
-			self.optim,
-			num_warmup_steps=warmup_steps)
-
 		(
 			self.model,
 			self.optim,
@@ -61,14 +75,8 @@ class MuseTrainer(BaseTrainer):
 			self.train_dl
 	 )
 		
-		# logging details
-		self.num_epoch = cfg.training.num_epochs
-		self.save_every = cfg.experiment.save_every
-		self.sample_every = cfg.experiment.sample_every
-		self.log_every = cfg.experiment.log_every
-		self.max_grad_norm = cfg.training.max_grad_norm
-			
 	def train(self):
+     
 	 
 		start_epoch=self.global_step//len(self.train_dl)
 	  
@@ -94,11 +102,15 @@ class MuseTrainer(BaseTrainer):
 					
 					if not (self.global_step % self.sample_every):
 						self.sample_prompts()
-	  
+      
+					if not (self.global_step % self.eval_every):
+						self.generate_imgs()
+			
 					if not (self.global_step % self.gradient_accumulation_steps):
 						lr = self.optim.param_groups[0]['lr']
 						self.accelerator.log({"loss": loss.item(), "lr": lr}, step=self.global_step)
-			
+						# print(f"Step: {self.global_step}, Loss: {loss.item()}")
+					
 					self.global_step += 1
 	  
 					
@@ -114,11 +126,35 @@ class MuseTrainer(BaseTrainer):
 				text = line.strip()
 				prompts.append(text)
 		imgs = self.model.generate(prompts)
-		grid = make_grid(imgs, nrow=6, normalize=True, value_range=(-1, 1))
+		grid = make_grid(imgs, nrow=6, normalize=False, value_range=(-1, 1))
 		# send this to wandb
 		self.accelerator.log({"samples": [wandb.Image(grid, caption="Generated samples")]})
 		save_image(grid, os.path.join(self.image_saved_dir, f'step.png'))
 		self.model.train()
+  
+  
+	@torch.no_grad()
+	def generate_imgs(self):
+     
+		logging.info("Generating samples")
+		self.model.eval()
+		with tqdm(self.train_dl, dynamic_ncols=True, disable=not self.accelerator.is_main_process) as val_dl:
+			for i, batch in enumerate(val_dl):
+				img, text = batch
+				img = img.to(self.device)
+
+				if i > 3:
+					break
+					
+				imgs = self.model.generate(text, device=self.device)
+				grid = make_grid(imgs, nrow=6, normalize=False, value_range=(-1, 1))
+				# send this to wandb
+				self.accelerator.log({"samples": [wandb.Image(grid, caption="Generated samples")]})
+				save_image(grid, os.path.join(self.image_saved_dir, f'step_{i}.png'))
+		self.model.train()
+
+
+
 
 
 

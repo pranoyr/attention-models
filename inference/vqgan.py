@@ -11,7 +11,7 @@ from models import VQGAN
 
 
 def restore(x):
-    x = (x + 1) * 0.5
+    # x = (x + 1) * 0.5
     x = x.permute(1,2,0).detach().cpu().numpy()
     x = (255*x).astype(np.uint8)
     return x
@@ -26,7 +26,7 @@ args = parser.parse_args()
 transforms = T.Compose([
     T.Resize((256, 256)),
 	T.ToTensor(),
-	T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+	# T.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 ])
 
 

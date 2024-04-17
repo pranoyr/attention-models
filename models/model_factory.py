@@ -9,7 +9,6 @@ from .maskgit import MaskGitTransformer
 import torch
 import logging
 from models import ViT, ViTMoE
-from  models.vae.inference import VQVAE
 
 
 def load_model(model, checkpoint):

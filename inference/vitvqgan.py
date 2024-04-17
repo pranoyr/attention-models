@@ -19,7 +19,7 @@ def restore(x):
 
 
 parser = argparse.ArgumentParser(description='Process some integers.')
-parser.add_argument('--image', type=str, default='data/images/2.jpg', help='path to the image')
+parser.add_argument('--image', type=str, default='data/images/9.jpg', help='path to the image')
 parser.add_argument('--ckpt', type=str, default='outputs/vitvqgan/checkpoints/VitVQGAN.pt', help='path to the checkpoint')
 args = parser.parse_args()
 
@@ -54,19 +54,23 @@ vitvqgan.load_state_dict(ckpt['state_dict'], strict=False)
 vitvqgan.eval()
 
 # load image
-imgs = Image.open(args.image)
-org_img = np.array(imgs)
+img = Image.open(args.image)
+org_img = np.array(img)
 org_img = cv2.resize(org_img, (256, 256))[..., ::-1]
-imgs = transforms(imgs)
-imgs = imgs.unsqueeze(0)
+img = transforms(img)
+
+# making a dummy batch
+imgs = [img , img]
+imgs = torch.stack(imgs)
 
 # inference
 with torch.no_grad():
 	indices = vitvqgan.encode_imgs(imgs)
 	imgs = vitvqgan.decode_indices(indices)
 
+print(imgs.shape)
 # display
-img = restore(imgs[0])
+img = restore(imgs[1])
 img = img[:, :, ::-1]
 
 final_img = np.concatenate([org_img, img], axis=1)

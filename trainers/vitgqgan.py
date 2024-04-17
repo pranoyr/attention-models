@@ -57,16 +57,15 @@ class VQGANTrainer(BaseTrainer):
 		beta1 = cfg.optimizer.params.beta1
 		beta2 = cfg.optimizer.params.beta2
 		decay_steps = cfg.lr_scheduler.params.decay_steps
-
-		self.gradient_accumulation_steps = cfg.training.gradient_accumulation_steps
+		weight_decay = cfg.optimizer.params.weight_decay
 
 
 		# disciminator
 		self.discr = NLayerDiscriminator(input_nc=3, ndf=64, n_layers=3)
 		
 		# Optimizer
-		self.g_optim = Adam(self.model.parameters(), lr=lr, betas=(beta1, beta2))
-		self.d_optim = Adam(self.discr.parameters(), lr=lr, betas=(beta1, beta2))
+		self.g_optim = Adam(self.model.parameters(), lr=lr, betas=(beta1, beta2), weight_decay=weight_decay)
+		self.d_optim = Adam(self.discr.parameters(), lr=lr, betas=(beta1, beta2), weight_decay=weight_decay)
   
   
 		num_iters_per_epoch = math.ceil(len(self.train_dl.dataset))
@@ -108,14 +107,6 @@ class VQGANTrainer(BaseTrainer):
 			self.d_sched,
 			self.train_dl
 	 )
-		
-		# logging details
-		self.num_epoch = cfg.training.num_epochs
-		self.save_every = cfg.experiment.save_every
-		self.sample_every = cfg.experiment.sample_every
-		self.log_every = cfg.experiment.log_every
-		self.max_grad_norm = cfg.training.max_grad_norm
-		
 	
 	@property
 	def device(self):

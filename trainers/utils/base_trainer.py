@@ -23,6 +23,7 @@ class BaseTrainer(object):
 
 		self.cfg = cfg
 		self.project_name = cfg.experiment.project_name
+		self.exp_name = cfg.experiment.exp_name
 		
 		# init accelerator
 		self.accelerator = Accelerator(
@@ -34,7 +35,7 @@ class BaseTrainer(object):
 				project_name=cfg.experiment.project_name,
 				init_kwargs={"wandb": {
 				"config" : cfg,
-				"name" : cfg.experiment.name}
+				"name" : self.exp_name}
 		})
 
 		# models and dataloaders
@@ -44,6 +45,14 @@ class BaseTrainer(object):
 		self.num_epoch = cfg.training.num_epochs
 		self.gradient_accumulation_steps = cfg.training.gradient_accumulation_steps
 		self.batch_size = cfg.dataset.params.batch_size
+		self.max_grad_norm = cfg.training.max_grad_norm
+
+		# logging details
+		self.num_epoch = cfg.training.num_epochs
+		self.save_every = cfg.experiment.save_every
+		self.sample_every = cfg.experiment.sample_every
+		self.log_every = cfg.experiment.log_every
+		self.eval_every = cfg.experiment.eval_every
 		
 		# Resume from ckpt
 		if cfg.experiment.resume_path_from_checkpoint:
@@ -52,10 +61,11 @@ class BaseTrainer(object):
 	
 	
 		# Checkpoint and generated images folder
-		self.checkpoint_folder = os.path.join(cfg.experiment.output_folder, 'checkpoints')
+		output_folder = f"outputs/{cfg.experiment.project_name}"
+		self.checkpoint_folder = os.path.join(output_folder, 'checkpoints')
 		os.makedirs(self.checkpoint_folder, exist_ok=True)
 		
-		self.image_saved_dir = os.path.join(cfg.experiment.output_folder, 'images')
+		self.image_saved_dir = os.path.join(output_folder, 'images')
 		os.makedirs(self.image_saved_dir, exist_ok=True)
 
 
@@ -64,12 +74,12 @@ class BaseTrainer(object):
 
 		# effective iteration considering gradient accumulation
 		effective_batch_size = self.batch_size * self.gradient_accumulation_steps
-		num_iters_per_epoch = math.ceil(len(self.train_dl.dataset) / effective_batch_size)
-		total_iters = self.num_epoch * num_iters_per_epoch
-		logging.info(f"Number of iterations per epoch: {num_iters_per_epoch}")
-		logging.info(f"Total training iterations: {total_iters}")
+		self.num_iters_per_epoch = math.ceil(len(self.train_dl.dataset) / effective_batch_size)
+		self.total_iters = self.num_epoch * self.num_iters_per_epoch
+		logging.info(f"Number of iterations per epoch: {self.num_iters_per_epoch}")
+		logging.info(f"Total training iterations: {self.total_iters}")
+
 		
-	
 	@property
 	def device(self):
 		return self.accelerator.device
@@ -82,9 +92,9 @@ class BaseTrainer(object):
 	def save_ckpt(self, rewrite=False):
 		"""Save checkpoint"""
 
-		filename = os.path.join(self.checkpoint_folder, f'{self.project_name}_step_{self.global_step}.pt')
+		filename = os.path.join(self.checkpoint_folder, f'{self.project_name}_{self.exp_name}_step_{self.global_step}.pt')
 		if rewrite:
-			filename = os.path.join(self.checkpoint_folder, f'{self.project_name}.pt')
+			filename = os.path.join(self.checkpoint_folder, f'{self.project_name}_{self.exp_name}.pt')
 		
 		checkpoint={
 				'step': self.global_step,

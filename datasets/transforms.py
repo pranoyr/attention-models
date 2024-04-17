@@ -43,11 +43,11 @@ if __name__=="__main__":
             "preprocessing": {
                 "resolution": 256,
                 "random_crop": True,
-                "random_flip": True,
+                "random_flip": False,
                 "center_crop": False,
                 "mean": [0.5, 0.5, 0.5],
                 "std": [0.5, 0.5, 0.5],
-                "scale" : 0.8
+                "scale" : 1.0
             }
         }
     }
@@ -56,18 +56,19 @@ if __name__=="__main__":
     transform = get_transform(cfg, is_train=True)
     while True:
         img_transformed = transform(img)
-        img_numpy = img_transformed.view(-1).numpy()
+        # img_numpy = img_transformed.view(-1).numpy()
         # show the distribution of the image
         # plt.hist(img_numpy, bins=100)
         # # save the image
         # plt.savefig("hist.jpg")
         
 
-        grid = make_grid(img_transformed, nrow=6, normalize=False, value_range=(-1, 1))
-        save_image(grid, "t.jpg")
-        # cv2.imshow("img", img_numpy)
+        grid = make_grid(img_transformed, nrow=6, normalize=True, value_range=(-1, 1))
+        # save_image(grid, "t.jpg")
+        grid = grid.permute(1, 2, 0).detach().cpu().numpy()
+        cv2.imshow("img", grid)
         # cv2.imwrite("t.jpg", grid)
-        break
+        # break
         
-        # if cv2.waitKey(0) & 0xFF == ord('q'):
-        #     break
+        if cv2.waitKey(0) & 0xFF == ord('q'):
+            break

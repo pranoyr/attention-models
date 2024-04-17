@@ -23,7 +23,10 @@ class CoCo:
         self.coco = COCO(annFile)
         self.imgids = self.coco.getImgIds()
         self.transform = get_transform(cfg, is_train)
-    
+        
+        if cfg.experiment.max_train_examples < len(self.imgids):
+            self.imgids = self.imgids[:cfg.experiment.max_train_examples]
+            
     def __getitem__(self, idx):
         imgid = self.imgids[idx]
         img_name = self.coco.loadImgs(imgid)[0]['file_name']
