@@ -13,16 +13,6 @@ import random
 from tqdm import tqdm
 
 
-def log(t, eps = 1e-20):
-	return torch.log(t.clamp(min = eps))
-
-def gumbel_noise(t):
-	noise = torch.zeros_like(t).uniform_(0, 1)
-	return -log(-log(noise))
-
-def gumbel_sample(t, temperature = 1., dim = -1):
-	return ((t / max(temperature, 1e-10)) + gumbel_noise(t)).argmax(dim = dim)
-
 
 def cosine_schedule(t):
 	return torch.cos(t * math.pi / 2)
@@ -34,9 +24,6 @@ def filter_logits(logits, p=0.9):
 	filtered_logits = torch.full_like(logits, float('-inf'))
 	filtered_logits.scatter_(2, ind, val)
 	return filtered_logits
-
-def uniform(shape, min = 0, max = 1, device = None):
-	return torch.zeros(shape, device = device).float().uniform_(0, 1)
 
 def exists(val):
 	return val is not None
@@ -182,7 +169,7 @@ class MUSE(nn.Module):
 		img_token_indices, tgt = self.fill_mask(img_token_indices)
   
 		# self conditioning (for classifier free guidance)
-		context_mask = uniform((b,1,1), device=device) < self.embeds_drop_prob
+		context_mask = torch.rand((b,1,1), device=device) < self.embeds_drop_prob
 		text_embeds = text_embeds * context_mask
 
 		# bidirectional decoder
