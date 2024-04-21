@@ -116,14 +116,11 @@ class MUSE(nn.Module):
 		#### Text Encoder  ####
 		self.text_encoder= TextEncoder(dim, enc_type, enc_name, max_length)
 		
-	
 		#### Vector Quantizer ####
 		self.vq = vq
 		codebook_size = vq.codebook.codebook_size
-		# codebook_size = 16384
 		self.mask_token_id = codebook_size
 		num_patches = vq.num_patches
-		# num_patches = 256
 
 		#### Transformer Decoder ####
 		self.decoder = BidirectionalDecoder(dim, codebook_size, n_heads, d_head, depth, mult, dropout, num_patches)
@@ -183,9 +180,6 @@ class MUSE(nn.Module):
 	def generate(self, texts, timesteps = 18, device = None):
 		b = len(texts)
 		num_patches = self.vq.num_patches 
-
-		if not device:
-			device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 		# text encoder
 		text_embeds, _ = self.text_encoder(texts, device=device)
