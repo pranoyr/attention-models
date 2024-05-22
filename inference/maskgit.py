@@ -74,6 +74,6 @@ imgs = transformer.generate(img, num_masked=100, timesteps=8)
 # display
 img = restore(imgs[0])
 img = img[:, :, ::-1]
-cv2.imshow('result', img)
-cv2.waitKey(0)
-# cv2.imwrite('outputs/maskgit/test_outputs/final.jpg', img)
+# cv2.imshow('result', img)
+# cv2.waitKey(0)
+cv2.imwrite('final.jpg', img)
