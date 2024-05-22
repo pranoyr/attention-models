@@ -333,7 +333,7 @@ loss = muse(texts, imgs)
 loss.backward()
 
 # generate images
-imgs = muse.generate(texts)
+imgs = muse.generate(texts, device=device)
 ```
 
 
