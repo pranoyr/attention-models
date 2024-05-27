@@ -1,6 +1,6 @@
 experiment:
     project_name: maskgit
-    name: run1
+    exp_name: run1
     max_train_examples: 10000000
     save_every: 1000
     eval_every: 500
