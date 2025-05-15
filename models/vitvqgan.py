@@ -9,7 +9,7 @@ from einops import rearrange, repeat, pack
 from einops.layers.torch import Rearrange
 from models.softmax_attention import SoftmaxAttention
 from typing import Optional
-from xformers.ops import SwiGLU
+
 
 
 
@@ -17,7 +17,7 @@ def l2_norm(x):
 	return F.normalize(x, p=2, dim=-1)
 
 
-class FeedForward(SwiGLU):
+class FeedForward():
 	def __init__(
 		self,
 		in_features: int,
