@@ -68,12 +68,10 @@ class VQGANTrainer(BaseTrainer):
 		self.d_optim = Adam(self.discr.parameters(), lr=lr, betas=(beta1, beta2), weight_decay=weight_decay)
   
   
-		num_iters_per_epoch = math.ceil(len(self.train_dl.dataset))
-		total_iters = self.num_epoch * num_iters_per_epoch
 		if decay_steps:
 			total_iters = decay_steps
-		self.g_sched = CosineLRScheduler(self.g_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
-		self.d_sched = CosineLRScheduler(self.d_optim, t_initial=total_iters, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
+		self.g_sched = CosineLRScheduler(self.g_optim, t_initial=self.num_training_steps, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
+		self.d_sched = CosineLRScheduler(self.d_optim, t_initial=self.num_training_steps, warmup_t=warmup_steps, warmup_lr_init=1e-6, lr_min=5e-5)
 
 
 		# define losses

@@ -40,8 +40,7 @@ class MaskGitTrainer(BaseTrainer):
 		decay_steps = cfg.lr_scheduler.params.decay_steps
   
 		if not decay_steps:
-			decay_steps = self.num_epoch * self.num_iters_per_epoch
-
+			decay_steps = self.num_training_steps
 		self.optim = get_optimizer(cfg, self.model.parameters())
 		self.scheduler = get_scheduler(cfg, self.optim, decay_steps=decay_steps)
 

@@ -72,12 +72,9 @@ class BaseTrainer(object):
 		logging.info(f"Train dataset size: {len(self.train_dl.dataset)}")
 		logging.info(f"Val dataset size: {len(self.val_dl.dataset)}")
 
-		# effective iteration considering gradient accumulation (just for logging)
-		effective_batch_size = self.batch_size * self.gradient_accumulation_steps
-		num_iters_per_epoch = math.ceil(len(self.train_dl.dataset) / effective_batch_size)
-		total_iters = self.num_epoch * num_iters_per_epoch
-		logging.info(f"Effective number of iterations per epoch: {num_iters_per_epoch}")
-		logging.info(f"Effective total training iterations: {total_iters}")
+
+		self.num_training_steps = self.num_epoch * math.ceil(len(self.train_dl) / self.gradient_accumulation_steps)
+		logging.info(f"Total training steps: {self.num_training_steps}")
 
 		
 	@property

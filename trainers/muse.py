@@ -42,7 +42,7 @@ class MuseTrainer(BaseTrainer):
 
   
 		if not decay_steps:
-			decay_steps = self.num_epoch * self.num_iters_per_epoch
+			decay_steps = self.num_training_steps
 
 
 		# no decay on bias and layernorm and embedding

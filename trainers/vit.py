@@ -30,7 +30,7 @@ class VitTrainer(BaseTrainer):
 
 		self.criterion = nn.CrossEntropyLoss()
 	
-		self.scheduler = get_cosine_schedule_with_warmup(optimizer=self.optim, num_warmup_steps=warmup_steps, num_training_steps=cfg.training.num_epochs*len(self.train_dl))
+		self.scheduler = get_cosine_schedule_with_warmup(optimizer=self.optim, num_warmup_steps=warmup_steps, num_training_steps=self.num_training_steps)
 
 		(
 			self.model,
